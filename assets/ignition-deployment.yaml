@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ignition-config
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ignition-provider
+  template:
+    metadata:
+      labels:
+        app: ignition-provider
+    spec:
+      containers:
+      - args:
+        - -m
+        - http.server
+        - --directory
+        - /assets
+        command:
+        - /usr/local/bin/python
+        image: docker.io/python:latest
+        name: python
+        ports:
+        - containerPort: 8000
+          name: web-server
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 10m
+            memory: 150Mi
+        volumeMounts:
+        - mountPath: /assets
+          name: ignition-config
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: ignition-config
+        name: ignition-config

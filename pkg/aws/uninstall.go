@@ -31,7 +31,7 @@ func UninstallCluster(name string) error {
 	log.Debugf("The management cluster infra name is: %s", infraName)
 	log.Debugf("The management cluster AWS region is: %s", region)
 
-	dnsZoneID, parentDomain, err := getDNSZoneInfo(dynamicClient)
+	dnsZoneID, parentDomain, _, err := getDNSZoneInfo(dynamicClient)
 	if err != nil {
 		return fmt.Errorf("failed to obtain public zone information: %v", err)
 	}
@@ -123,12 +123,6 @@ func UninstallCluster(name string) error {
 	log.Infof("Removing worker machineset")
 	if err = removeWorkerMachineset(dynamicClient, infraName, name); err != nil {
 		return fmt.Errorf("failed to remove worker machineset: %v", err)
-	}
-
-	log.Infof("Removing bootstrap ignition bucket")
-	bucketName := generateBucketName(infraName, name, "ign")
-	if err = aws.RemoveIgnitionBucket(bucketName); err != nil {
-		return fmt.Errorf("cannot delete ignition bucket: %v", err)
 	}
 
 	log.Info("Removing cluster namespace")
