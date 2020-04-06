@@ -2,7 +2,6 @@ package aws
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -573,94 +572,6 @@ func (h *AWSHelper) EnsureWorkersAllowNodePortAccess() error {
 	}
 
 	return nil
-}
-
-// EnsureIgnitionBucket ensures that a bucket with the given name exists and that it contains
-// a file with the contents of the ignition filename passed.
-func (h *AWSHelper) EnsureIgnitionBucket(name, fileName string) error {
-	_, err := h.s3Client.GetBucketLocation(&s3.GetBucketLocationInput{
-		Bucket: aws.String(name),
-	})
-	if err != nil {
-		// Bucket likely doesn't exist, create it
-		_, err = h.s3Client.CreateBucket(&s3.CreateBucketInput{
-			Bucket: aws.String(name),
-			ACL:    aws.String("public-read"),
-		})
-		if err != nil {
-			return fmt.Errorf("failed to create bucket %s: %v", name, err)
-		}
-	}
-	_, err = h.s3Client.PutBucketTagging(&s3.PutBucketTaggingInput{
-		Bucket: aws.String(name),
-		Tagging: &s3.Tagging{
-			TagSet: []*s3.Tag{
-				{
-					Key:   aws.String(fmt.Sprintf("kubernetes/cluster/%s", h.infraName)),
-					Value: aws.String("owned"),
-				},
-			},
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to tag bucket %s: %v", name, err)
-	}
-	ign, err := os.Open(fileName)
-	if err != nil {
-		return fmt.Errorf("cannot open ignition file %s: %v", fileName, err)
-	}
-	defer ign.Close()
-	_, err = h.s3Uploader.Upload(&s3manager.UploadInput{
-		ACL:    aws.String("public-read"),
-		Bucket: aws.String(name),
-		Key:    aws.String("worker.ign"),
-		Body:   ign,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to upload ignition file: %v", err)
-	}
-	return nil
-}
-
-func (h *AWSHelper) RemoveIgnitionBucket(name string) error {
-	var deleteErr error
-	_, err := h.s3Client.GetBucketLocation(&s3.GetBucketLocationInput{
-		Bucket: aws.String(name),
-	})
-	if awsErr, ok := err.(awserr.Error); ok {
-		if awsErr.Code() == s3.ErrCodeNoSuchBucket {
-			return nil
-		}
-	}
-	if err != nil {
-		return err
-	}
-
-	err = h.s3Client.ListObjectsV2Pages(&s3.ListObjectsV2Input{
-		Bucket: aws.String(name),
-	}, func(output *s3.ListObjectsV2Output, last bool) bool {
-		for _, obj := range output.Contents {
-			_, deleteErr = h.s3Client.DeleteObject(&s3.DeleteObjectInput{
-				Bucket: aws.String(name),
-				Key:    obj.Key,
-			})
-			if deleteErr != nil {
-				return false
-			}
-		}
-		return true
-	})
-	if err != nil {
-		return err
-	}
-	if deleteErr != nil {
-		return deleteErr
-	}
-	_, err = h.s3Client.DeleteBucket(&s3.DeleteBucketInput{
-		Bucket: aws.String(name),
-	})
-	return err
-
 }
 
 func ownedTag(infraName string) *ec2.Tag {

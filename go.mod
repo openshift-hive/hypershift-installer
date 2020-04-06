@@ -29,7 +29,7 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20190918161442-d4c9c65c82af
 )
 
-go 1.12
+go 1.13
 
 require (
 	github.com/apparentlymart/go-cidr v1.0.1

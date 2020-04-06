@@ -6,9 +6,12 @@ default: build
 
 .PHONY: build
 #build:  bindata control-plane-operator
-build:
-	#go build -mod=vendor -o bin/hypershift github.com/openshift/hypershift-toolkit/cmd/hypershift
+build: bindata
 	go build -mod=vendor -o bin/hypershift-installer github.com/openshift-hive/hypershift-installer/cmd
+
+.PHONY: bindata
+bindata:
+	hack/update-bindata.sh
 
 .PHONY: verify-gofmt
 verify-gofmt:

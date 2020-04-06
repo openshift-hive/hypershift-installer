@@ -42,6 +42,8 @@ import (
 	"github.com/openshift/hypershift-toolkit/pkg/ignition"
 	"github.com/openshift/hypershift-toolkit/pkg/pki"
 	"github.com/openshift/hypershift-toolkit/pkg/render"
+
+	"github.com/openshift-hive/hypershift-installer/pkg/assets"
 )
 
 const (
@@ -63,6 +65,10 @@ var (
 	}
 	coreScheme = runtime.NewScheme()
 	coreCodecs = serializer.NewCodecFactory(coreScheme)
+
+	ignitionDeploymentBytes = assets.MustAsset("assets/ignition-deployment.yaml")
+	ignitionServiceBytes    = assets.MustAsset("assets/ignition-service.yaml")
+	ignitionRouteBytes      = assets.MustAsset("assets/ignition-route.yaml")
 )
 
 func init() {
@@ -125,7 +131,7 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 		return fmt.Errorf("failed to obtain network info for cluster: %v", err)
 	}
 
-	dnsZoneID, parentDomain, err := getDNSZoneInfo(dynamicClient)
+	dnsZoneID, parentDomain, hyperHostDomain, err := getDNSZoneInfo(dynamicClient)
 	if err != nil {
 		return fmt.Errorf("failed to obtain public zone information: %v", err)
 	}
@@ -434,11 +440,11 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	if err = ignition.GenerateIgnition(params, sshKey, pullSecretFile, pkiDir, workingDir); err != nil {
 		return fmt.Errorf("cannot generate ignition file for workers: %v", err)
 	}
-	// Ensure that S3 bucket with ignition file in it exists
-	bucketName := generateBucketName(infraName, name, "ign")
-	log.Infof("Ensuring ignition bucket exists")
-	if err = aws.EnsureIgnitionBucket(bucketName, filepath.Join(workingDir, "bootstrap.ign")); err != nil {
-		return fmt.Errorf("failed to ensure ignition bucket exists: %v", err)
+
+	// Set up endpoint to serve up ignition
+	log.Info("Generating ignition services for workers")
+	if err := generateIgnitionServices(manifestsDir, filepath.Join(workingDir, "bootstrap.ign")); err != nil {
+		return fmt.Errorf("failed to generate ignition objects for workers")
 	}
 
 	log.Info("Rendering Manifests")
@@ -461,7 +467,7 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	if err = generateWorkerMachineset(dynamicClient, infraName, lbInfo.Zone, name, routerLBName, filepath.Join(manifestsDir, "machineset.json")); err != nil {
 		return fmt.Errorf("failed to generate worker machineset: %v", err)
 	}
-	if err = generateUserDataSecret(name, bucketName, filepath.Join(manifestsDir, "machine-user-data.json")); err != nil {
+	if err = generateUserDataSecret(name, hyperHostDomain, filepath.Join(manifestsDir, "machine-user-data.json")); err != nil {
 		return fmt.Errorf("failed to generate user data secret: %v", err)
 	}
 	kubeadminPassword, err := generateKubeadminPassword()
@@ -534,6 +540,48 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	log.Infof("Kubeconfig is available in secret %q in the %s namespace", "admin-kubeconfig", name)
 	log.Infof("Console URL:  %s", fmt.Sprintf("https://console-openshift-console.%s", params.IngressSubdomain))
 	log.Infof("kubeadmin password is available in secret %q in the %s namespace", "kubeadmin-password", name)
+	return nil
+}
+
+// generateIgnitionServices will create a Deployment/Service/Route to serve up the ignition config
+func generateIgnitionServices(manifestsDir string, ignitionFile string) error {
+
+	if err := ioutil.WriteFile(filepath.Join(manifestsDir, "ignition-deployment.yaml"), ignitionDeploymentBytes, 0644); err != nil {
+		log.WithError(err).Error("failed to write out ignition deployment")
+		return err
+	}
+
+	configMap := &corev1.ConfigMap{}
+	configMap.APIVersion = "v1"
+	configMap.Name = "ignition-config"
+
+	ignitionFileBytes, err := ioutil.ReadFile(ignitionFile)
+	if err != nil {
+		log.WithError(err).Error("failed to read in ignition file contents")
+		return err
+	}
+	configMap.Data = map[string]string{
+		"worker.ign": string(ignitionFileBytes),
+	}
+	configMapBytes, err := runtime.Encode(coreCodecs.LegacyCodec(corev1.SchemeGroupVersion), configMap)
+	if err != nil {
+		log.WithError(err).Error("failed to convert configmap to bytes")
+	}
+	if err := ioutil.WriteFile(filepath.Join(manifestsDir, "ignition-config.json"), configMapBytes, 0644); err != nil {
+		log.WithError(err).Error("failed to write out ignition configmap")
+		return err
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(manifestsDir, "ignition-service.yaml"), ignitionServiceBytes, 0644); err != nil {
+		log.WithError(err).Error("failed to write out ignition service")
+		return err
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(manifestsDir, "ignition-route.yaml"), ignitionRouteBytes, 0644); err != nil {
+		log.WithError(err).Error("failed to write out route")
+		return err
+	}
+
 	return nil
 }
 
@@ -840,28 +888,28 @@ func getInfrastructureInfo(client dynamic.Interface) (string, string, error) {
 	return infraName, region, nil
 }
 
-func getDNSZoneInfo(client dynamic.Interface) (string, string, error) {
+func getDNSZoneInfo(client dynamic.Interface) (string, string, string, error) {
 	configGroupVersion, err := schema.ParseGroupVersion("config.openshift.io/v1")
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	dnsGroupVersionResource := configGroupVersion.WithResource("dnses")
 	obj, err := client.Resource(dnsGroupVersionResource).Get("cluster", metav1.GetOptions{})
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	publicZoneID, exists, err := unstructured.NestedString(obj.Object, "spec", "publicZone", "id")
 	if !exists || err != nil {
-		return "", "", fmt.Errorf("could not find the dns public zone id in the dns resource: %v", err)
+		return "", "", "", fmt.Errorf("could not find the dns public zone id in the dns resource: %v", err)
 	}
 	domain, exists, err := unstructured.NestedString(obj.Object, "spec", "baseDomain")
 	if !exists || err != nil {
-		return "", "", fmt.Errorf("could not find the dns base domain in the dns resource: %v", err)
+		return "", "", "", fmt.Errorf("could not find the dns base domain in the dns resource: %v", err)
 	}
 	parts := strings.Split(domain, ".")
 	baseDomain := strings.Join(parts[1:], ".")
 
-	return publicZoneID, baseDomain, nil
+	return publicZoneID, baseDomain, domain, nil
 }
 
 // loadConfig loads a REST Config as per the rules specified in GetConfig
@@ -965,7 +1013,7 @@ func generateWorkerMachineset(client dynamic.Interface, infraName, zone, namespa
 	return ioutil.WriteFile(fileName, machineSetBytes, 0644)
 }
 
-func generateUserDataSecret(namespace, bucketName, fileName string) error {
+func generateUserDataSecret(namespace, hyperHostDomain, fileName string) error {
 	secret := &corev1.Secret{}
 	secret.Kind = "Secret"
 	secret.APIVersion = "v1"
@@ -973,7 +1021,7 @@ func generateUserDataSecret(namespace, bucketName, fileName string) error {
 	secret.Namespace = "openshift-machine-api"
 
 	disableTemplatingValue := []byte(base64.StdEncoding.EncodeToString([]byte("true")))
-	userDataValue := []byte(fmt.Sprintf(`{"ignition":{"config":{"append":[{"source":"https://%s.s3.amazonaws.com/worker.ign","verification":{}}]},"security":{},"timeouts":{},"version":"2.2.0"},"networkd":{},"passwd":{},"storage":{},"systemd":{}}`, bucketName))
+	userDataValue := []byte(fmt.Sprintf(`{"ignition":{"config":{"append":[{"source":"http://ignition-provider-%s.apps.%s/worker.ign","verification":{}}]},"security":{},"timeouts":{},"version":"2.2.0"},"networkd":{},"passwd":{},"storage":{},"systemd":{}}`, namespace, hyperHostDomain))
 
 	secret.Data = map[string][]byte{
 		"disableTemplating": disableTemplatingValue,
