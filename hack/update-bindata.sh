@@ -14,6 +14,7 @@ GOBIN=${SRC_DIR}/bin go install github.com/jteeuwen/go-bindata/go-bindata
 "./bin/go-bindata" \
         -nocompress \
         -pkg "assets" \
+	-prefix "assets/" \
         -o "${OUTPUT_FILE}" \
         -ignore "OWNERS" \
         -ignore ".*\.sw.?" \

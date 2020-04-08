@@ -32,18 +32,23 @@ replace (
 go 1.13
 
 require (
+	github.com/Luzifer/go-dhparam v1.0.0
 	github.com/apparentlymart/go-cidr v1.0.1
 	github.com/aws/aws-sdk-go v1.30.0
+	github.com/coreos/ignition v0.34.0
+	github.com/google/uuid v1.1.1
 	github.com/openshift/api v0.0.0-20200330134433-8e259f67fc55
 	github.com/openshift/client-go v0.0.0-20200116152001-92a2713fa240
-	github.com/openshift/hypershift-toolkit v0.0.0-20200328003509-09ef0f45e8ae
+	github.com/openshift/hypershift-toolkit v0.0.0-20200328003509-09ef0f45e8ae // indirect
+	github.com/openshift/oc v0.0.0-00010101000000-000000000000
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/cobra v0.0.7
+	github.com/vincent-petithory/dataurl v0.0.0-20191104211930-d1553a71de50
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
 	k8s.io/api v0.18.0
 	k8s.io/apimachinery v0.18.0
 	k8s.io/cli-runtime v0.0.0
 	k8s.io/client-go v0.17.1
 	k8s.io/kubectl v0.0.0
-	k8s.io/utils v0.0.0-20191114184206-e782cd3c129f
 )
