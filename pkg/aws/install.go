@@ -38,10 +38,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/retry"
 
-	"github.com/openshift/hypershift-toolkit/pkg/api"
-	"github.com/openshift/hypershift-toolkit/pkg/ignition"
-	"github.com/openshift/hypershift-toolkit/pkg/pki"
-	"github.com/openshift/hypershift-toolkit/pkg/render"
+	"github.com/openshift-hive/hypershift-installer/pkg/api"
+	"github.com/openshift-hive/hypershift-installer/pkg/ignition"
+	"github.com/openshift-hive/hypershift-installer/pkg/pki"
+	"github.com/openshift-hive/hypershift-installer/pkg/render"
 
 	"github.com/openshift-hive/hypershift-installer/pkg/assets"
 )
@@ -66,9 +66,9 @@ var (
 	coreScheme = runtime.NewScheme()
 	coreCodecs = serializer.NewCodecFactory(coreScheme)
 
-	ignitionDeploymentBytes = assets.MustAsset("assets/ignition-deployment.yaml")
-	ignitionServiceBytes    = assets.MustAsset("assets/ignition-service.yaml")
-	ignitionRouteBytes      = assets.MustAsset("assets/ignition-route.yaml")
+	ignitionDeploymentBytes = assets.MustAsset("ignition-deployment.yaml")
+	ignitionServiceBytes    = assets.MustAsset("ignition-service.yaml")
+	ignitionRouteBytes      = assets.MustAsset("ignition-route.yaml")
 )
 
 func init() {
