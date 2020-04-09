@@ -74,11 +74,6 @@ func UninstallCluster(name string) error {
 		return fmt.Errorf("cannot delete OAuth target group: %v", err)
 	}
 
-	log.Infof("Removing API elastic IP")
-	if err = aws.RemoveEIP(apiLBName); err != nil {
-		return fmt.Errorf("cannot delete EIP for API load balancer: %v", err)
-	}
-
 	log.Infof("Removing VPN DNS record")
 	vpnDNSName := fmt.Sprintf("vpn.%s.%s.", name, parentDomain)
 	if err = aws.RemoveCNameRecord(dnsZoneID, vpnDNSName); err != nil {
