@@ -184,7 +184,7 @@ func clusterBootstrap00000_namespacesNeededForMonitoringYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/00000_namespaces-needed-for-monitoring.yaml", size: 537, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/00000_namespaces-needed-for-monitoring.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -216,7 +216,7 @@ func clusterBootstrapClusterConfigV1ConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/cluster-config-v1-configmap.yaml", size: 338, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/cluster-config-v1-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -241,7 +241,7 @@ func clusterBootstrapClusterDns02ConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/cluster-dns-02-config.yaml", size: 146, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/cluster-dns-02-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -275,7 +275,7 @@ func clusterBootstrapClusterInfrastructure02ConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/cluster-infrastructure-02-config.yaml", size: 577, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/cluster-infrastructure-02-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -300,7 +300,7 @@ func clusterBootstrapClusterIngress02ConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/cluster-ingress-02-config.yaml", size: 152, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/cluster-ingress-02-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -328,7 +328,7 @@ func clusterBootstrapClusterIngresscontrollers02ConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/cluster-ingresscontrollers-02-config.yaml", size: 217, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/cluster-ingresscontrollers-02-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -366,7 +366,7 @@ func clusterBootstrapClusterNetwork01CrdYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/cluster-network-01-crd.yaml", size: 513, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/cluster-network-01-crd.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -398,7 +398,7 @@ func clusterBootstrapClusterNetwork02ConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/cluster-network-02-config.yaml", size: 284, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/cluster-network-02-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -424,7 +424,7 @@ func clusterBootstrapClusterProxy01ConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/cluster-proxy-01-config.yaml", size: 142, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/cluster-proxy-01-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -444,7 +444,7 @@ func clusterBootstrapClusterVersionNamespaceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/cluster-version-namespace.yaml", size: 74, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/cluster-version-namespace.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -473,7 +473,7 @@ func clusterBootstrapNodeBootstrapperClusterrolebindingYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-bootstrap/node-bootstrapper-clusterrolebinding.yaml", size: 347, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-bootstrap/node-bootstrapper-clusterrolebinding.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -560,7 +560,7 @@ func clusterVersionOperatorClusterVersionOperatorDeploymentYaml() (*asset, error
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cluster-version-operator/cluster-version-operator-deployment.yaml", size: 2273, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "cluster-version-operator/cluster-version-operator-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -583,7 +583,7 @@ func commonServiceNetworkAdminKubeconfigSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "common/service-network-admin-kubeconfig-secret.yaml", size: 137, mode: os.FileMode(436), modTime: time.Unix(1586363499, 0)}
+	info := bindataFileInfo{name: "common/service-network-admin-kubeconfig-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -607,7 +607,7 @@ func controlPlaneOperatorCpOperatorConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "control-plane-operator/cp-operator-configmap.yaml", size: 137, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "control-plane-operator/cp-operator-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -735,7 +735,7 @@ func controlPlaneOperatorCpOperatorDeploymentYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "control-plane-operator/cp-operator-deployment.yaml", size: 2860, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "control-plane-operator/cp-operator-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -773,7 +773,7 @@ func etcdEtcdClusterCrdYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "etcd/etcd-cluster-crd.yaml", size: 444, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "etcd/etcd-cluster-crd.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -803,7 +803,7 @@ func etcdEtcdClusterYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "etcd/etcd-cluster.yaml", size: 265, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "etcd/etcd-cluster.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -832,7 +832,7 @@ func etcdEtcdOperatorClusterRoleBindingYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "etcd/etcd-operator-cluster-role-binding.yaml", size: 277, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "etcd/etcd-operator-cluster-role-binding.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -891,7 +891,7 @@ func etcdEtcdOperatorClusterRoleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "etcd/etcd-operator-cluster-role.yaml", size: 651, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "etcd/etcd-operator-cluster-role.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -947,7 +947,7 @@ func etcdEtcdOperatorYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "etcd/etcd-operator.yaml", size: 825, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "etcd/etcd-operator.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -972,7 +972,7 @@ func etcdEtcdSecretTemplateYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "etcd/etcd-secret-template.yaml", size: 220, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "etcd/etcd-secret-template.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1245,7 +1245,7 @@ func ignitionFilesEtcCrioCrioConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ignition/files/etc/crio/crio.conf", size: 9571, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "ignition/files/etc/crio/crio.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1279,7 +1279,7 @@ func ignitionFilesEtcKubernetesKubeletConfTemplate() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ignition/files/etc/kubernetes/kubelet.conf.template", size: 441, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "ignition/files/etc/kubernetes/kubelet.conf.template", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1297,7 +1297,7 @@ func ignitionFilesEtcSysctlDForwardConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ignition/files/etc/sysctl.d/forward.conf", size: 24, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "ignition/files/etc/sysctl.d/forward.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1317,7 +1317,7 @@ func ignitionFilesEtcSysctlDInotifyConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ignition/files/etc/sysctl.d/inotify.conf", size: 74, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "ignition/files/etc/sysctl.d/inotify.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1338,7 +1338,7 @@ func ignitionFilesEtcTmpfilesDCleanupCniConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ignition/files/etc/tmpfiles.d/cleanup-cni.conf", size: 192, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "ignition/files/etc/tmpfiles.d/cleanup-cni.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1376,7 +1376,7 @@ func ignitionUnitsKubeletService() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ignition/units/kubelet.service", size: 624, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "ignition/units/kubelet.service", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1433,7 +1433,7 @@ func ignitionDeploymentYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ignition-deployment.yaml", size: 834, mode: os.FileMode(436), modTime: time.Unix(1586270113, 0)}
+	info := bindataFileInfo{name: "ignition-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1458,7 +1458,7 @@ func ignitionRouteYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ignition-route.yaml", size: 140, mode: os.FileMode(436), modTime: time.Unix(1586270113, 0)}
+	info := bindataFileInfo{name: "ignition-route.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1488,7 +1488,7 @@ func ignitionServiceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ignition-service.yaml", size: 204, mode: os.FileMode(436), modTime: time.Unix(1586270113, 0)}
+	info := bindataFileInfo{name: "ignition-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1514,7 +1514,7 @@ func kubeApiserverClientConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/client.conf", size: 139, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/client.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1675,7 +1675,7 @@ func kubeApiserverConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/config.yaml", size: 4116, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1699,7 +1699,7 @@ func kubeApiserverKubeApiserverConfigConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-config-configmap.yaml", size: 140, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-config-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1731,7 +1731,7 @@ func kubeApiserverKubeApiserverConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-configmap.yaml", size: 380, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1890,7 +1890,7 @@ func kubeApiserverKubeApiserverDeploymentYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-deployment.yaml", size: 4117, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1914,7 +1914,7 @@ func kubeApiserverKubeApiserverOauthMetadataConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-oauth-metadata-configmap.yaml", size: 162, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-oauth-metadata-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1944,7 +1944,7 @@ func kubeApiserverKubeApiserverSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-secret.yaml", size: 537, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1974,7 +1974,7 @@ func kubeApiserverKubeApiserverServiceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-service.yaml", size: 253, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1998,7 +1998,7 @@ func kubeApiserverKubeApiserverVpnclientConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-vpnclient-config.yaml", size: 150, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-vpnclient-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2023,7 +2023,7 @@ func kubeApiserverKubeApiserverVpnclientSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-vpnclient-secret.yaml", size: 235, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-vpnclient-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2070,7 +2070,7 @@ func kubeApiserverOauthmetadataJson() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-apiserver/oauthMetadata.json", size: 911, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-apiserver/oauthMetadata.json", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2147,7 +2147,7 @@ func kubeControllerManagerConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-controller-manager/config.yaml", size: 1531, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-controller-manager/config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2171,7 +2171,7 @@ func kubeControllerManagerKubeControllerManagerConfigConfigmapYaml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-controller-manager/kube-controller-manager-config-configmap.yaml", size: 158, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-controller-manager/kube-controller-manager-config-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2197,7 +2197,7 @@ func kubeControllerManagerKubeControllerManagerConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-controller-manager/kube-controller-manager-configmap.yaml", size: 194, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-controller-manager/kube-controller-manager-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2302,7 +2302,7 @@ func kubeControllerManagerKubeControllerManagerDeploymentYaml() (*asset, error) 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-controller-manager/kube-controller-manager-deployment.yaml", size: 2755, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-controller-manager/kube-controller-manager-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2328,7 +2328,7 @@ func kubeControllerManagerKubeControllerManagerSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-controller-manager/kube-controller-manager-secret.yaml", size: 289, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-controller-manager/kube-controller-manager-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2351,7 +2351,7 @@ func kubeSchedulerConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-scheduler/config.yaml", size: 186, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-scheduler/config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2375,7 +2375,7 @@ func kubeSchedulerKubeSchedulerConfigConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-scheduler/kube-scheduler-config-configmap.yaml", size: 140, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-scheduler/kube-scheduler-config-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2478,7 +2478,7 @@ func kubeSchedulerKubeSchedulerDeploymentYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-scheduler/kube-scheduler-deployment.yaml", size: 2759, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-scheduler/kube-scheduler-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2501,7 +2501,7 @@ func kubeSchedulerKubeSchedulerSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "kube-scheduler/kube-scheduler-secret.yaml", size: 119, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "kube-scheduler/kube-scheduler-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2532,7 +2532,7 @@ func oauthOpenshiftOauthBrowserClientYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/oauth-browser-client.yaml", size: 377, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/oauth-browser-client.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2563,7 +2563,7 @@ func oauthOpenshiftOauthChallengingClientYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/oauth-challenging-client.yaml", size: 381, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/oauth-challenging-client.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2587,7 +2587,7 @@ func oauthOpenshiftOauthServerConfigConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/oauth-server-config-configmap.yaml", size: 155, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/oauth-server-config-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2680,7 +2680,7 @@ func oauthOpenshiftOauthServerConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/oauth-server-config.yaml", size: 2707, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/oauth-server-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2704,7 +2704,7 @@ func oauthOpenshiftOauthServerConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/oauth-server-configmap.yaml", size: 122, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/oauth-server-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2833,7 +2833,7 @@ func oauthOpenshiftOauthServerDeploymentYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/oauth-server-deployment.yaml", size: 3714, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/oauth-server-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2858,7 +2858,7 @@ func oauthOpenshiftOauthServerSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/oauth-server-secret.yaml", size: 212, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/oauth-server-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2888,7 +2888,7 @@ func oauthOpenshiftOauthServerServiceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/oauth-server-service.yaml", size: 222, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/oauth-server-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2911,7 +2911,7 @@ func oauthOpenshiftOauthServerSessionsecretSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/oauth-server-sessionsecret-secret.yaml", size: 194, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/oauth-server-sessionsecret-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2936,7 +2936,7 @@ func oauthOpenshiftV40ConfigSystemBrandingYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/v4-0-config-system-branding.yaml", size: 637991, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/v4-0-config-system-branding.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2963,7 +2963,7 @@ func oauthOpenshiftV40ConfigSystemSessionJson() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "oauth-openshift/v4-0-config-system-session.json", size: 179, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "oauth-openshift/v4-0-config-system-session.json", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3049,7 +3049,7 @@ func openshiftApiserverConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-apiserver/config.yaml", size: 1813, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-apiserver/config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3073,7 +3073,7 @@ func openshiftApiserverOpenshiftApiserverConfigConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-config-configmap.yaml", size: 150, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-config-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3101,7 +3101,7 @@ func openshiftApiserverOpenshiftApiserverConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-configmap.yaml", size: 248, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3207,7 +3207,7 @@ func openshiftApiserverOpenshiftApiserverDeploymentYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-deployment.yaml", size: 3104, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3234,7 +3234,7 @@ func openshiftApiserverOpenshiftApiserverSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-secret.yaml", size: 332, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3263,7 +3263,7 @@ func openshiftApiserverOpenshiftApiserverServiceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-service.yaml", size: 216, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3292,7 +3292,7 @@ func openshiftApiserverOpenshiftApiserverUserEndpointYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-user-endpoint.yaml", size: 206, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-user-endpoint.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3317,7 +3317,7 @@ func openshiftApiserverOpenshiftApiserverUserServiceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-user-service.yaml", size: 132, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-apiserver/openshift-apiserver-user-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3348,7 +3348,7 @@ func openshiftApiserverServiceTemplateYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-apiserver/service-template.yaml", size: 308, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-apiserver/service-template.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3372,7 +3372,7 @@ func openshiftControllerManager00OpenshiftControllerManagerNamespaceYaml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-controller-manager/00-openshift-controller-manager-namespace.yaml", size: 247, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-controller-manager/00-openshift-controller-manager-namespace.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3468,7 +3468,7 @@ func openshiftControllerManagerClusterPolicyControllerDeploymentYaml() (*asset, 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-controller-manager/cluster-policy-controller-deployment.yaml", size: 2518, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-controller-manager/cluster-policy-controller-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3505,7 +3505,7 @@ func openshiftControllerManagerConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-controller-manager/config.yaml", size: 627, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-controller-manager/config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3529,7 +3529,7 @@ func openshiftControllerManagerOpenshiftControllerManagerConfigConfigmapYaml() (
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-config-configmap.yaml", size: 168, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-config-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3553,7 +3553,7 @@ func openshiftControllerManagerOpenshiftControllerManagerConfigmapYaml() (*asset
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-configmap.yaml", size: 140, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3648,7 +3648,7 @@ func openshiftControllerManagerOpenshiftControllerManagerDeploymentYaml() (*asse
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-deployment.yaml", size: 2489, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3673,7 +3673,7 @@ func openshiftControllerManagerOpenshiftControllerManagerSecretYaml() (*asset, e
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-secret.yaml", size: 265, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3698,7 +3698,7 @@ func openshiftControllerManagerOpenshiftControllerManagerServiceCaYaml() (*asset
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-service-ca.yaml", size: 190, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openshift-controller-manager/openshift-controller-manager-service-ca.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3720,7 +3720,7 @@ func openvpnDockerfile() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/Dockerfile", size: 208, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/Dockerfile", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3746,7 +3746,7 @@ func openvpnClientConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/client.conf", size: 155, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/client.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3770,7 +3770,7 @@ func openvpnOpenvpnCcdConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/openvpn-ccd-configmap.yaml", size: 113, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/openvpn-ccd-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3795,7 +3795,7 @@ func openvpnOpenvpnClientConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/openvpn-client-configmap.yaml", size: 151, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/openvpn-client-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3871,7 +3871,7 @@ func openvpnOpenvpnClientDeploymentYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/openvpn-client-deployment.yaml", size: 1665, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/openvpn-client-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3903,7 +3903,7 @@ func openvpnOpenvpnClientSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/openvpn-client-secret.yaml", size: 364, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/openvpn-client-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3927,7 +3927,7 @@ func openvpnOpenvpnServerConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/openvpn-server-configmap.yaml", size: 126, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/openvpn-server-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4000,7 +4000,7 @@ func openvpnOpenvpnServerDeploymentYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/openvpn-server-deployment.yaml", size: 1561, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/openvpn-server-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4026,7 +4026,7 @@ func openvpnOpenvpnServerSecretYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/openvpn-server-secret.yaml", size: 225, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/openvpn-server-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4056,7 +4056,7 @@ func openvpnOpenvpnServerServiceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/openvpn-server-service.yaml", size: 221, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/openvpn-server-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4109,7 +4109,7 @@ func openvpnServerConf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/server.conf", size: 805, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/server.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4128,7 +4128,7 @@ func openvpnWorker() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openvpn/worker", size: 108, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "openvpn/worker", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4173,7 +4173,7 @@ func registryClusterImageregistryConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "registry/cluster-imageregistry-config.yaml", size: 542, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "registry/cluster-imageregistry-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4197,7 +4197,7 @@ func userManifestsBootstrapperUserManifestTemplateYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "user-manifests-bootstrapper/user-manifest-template.yaml", size: 104, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "user-manifests-bootstrapper/user-manifest-template.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4311,7 +4311,7 @@ func userManifestsBootstrapperUserManifestsBootstrapperPodYaml() (*asset, error)
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "user-manifests-bootstrapper/user-manifests-bootstrapper-pod.yaml", size: 2918, mode: os.FileMode(436), modTime: time.Unix(1585334093, 0)}
+	info := bindataFileInfo{name: "user-manifests-bootstrapper/user-manifests-bootstrapper-pod.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

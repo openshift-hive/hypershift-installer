@@ -2,7 +2,7 @@ SRC_DIRS = cmd pkg
 
 
 .PHONY: default
-default: build
+default: verify build
 
 .PHONY: build
 #build:  bindata control-plane-operator
@@ -12,6 +12,10 @@ build: bindata
 .PHONY: bindata
 bindata:
 	hack/update-bindata.sh
+
+.PHONY: verify-bindata
+verify-bindata:
+	hack/verify-bindata.sh
 
 .PHONY: verify-gofmt
 verify-gofmt:
@@ -23,4 +27,4 @@ verify-gofmt:
 	@rm .out
 
 .PHONY: verify
-verify: verify-gofmt
+verify: verify-gofmt verify-bindata
