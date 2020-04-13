@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -x
+ip addr delete {{ .ExternalAPIIPAddress }}/32 dev lo
+ip route del {{ .ExternalAPIIPAddress }}/32 dev lo scope link src {{ .ExternalAPIIPAddress }}

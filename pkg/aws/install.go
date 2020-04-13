@@ -53,6 +53,8 @@ const (
 	workerMachineSetCount = 3
 
 	defaultControlPlaneOperatorImage = "registry.svc.ci.openshift.org/hypershift-toolkit/hypershift-4.4:control-plane-operator"
+
+	DefaultAPIServerIPAddress = "172.20.0.1"
 )
 
 var (
@@ -216,13 +218,7 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	log.Infof("Using management machine with ID: %s and IP: %s", machineID, machineIP)
 
 	apiLBName := generateLBResourceName(infraName, name, "api")
-	apiAllocID, apiPublicIP, err := aws.EnsureEIP(apiLBName)
-	if err != nil {
-		return fmt.Errorf("cannot allocate API load balancer EIP: %v", err)
-	}
-	log.Infof("Allocated EIP with ID: %s, and IP: %s", apiAllocID, apiPublicIP)
-
-	apiLBARN, apiLBDNS, err := aws.EnsureNLB(apiLBName, lbInfo.Subnet, apiAllocID)
+	apiLBARN, apiLBDNS, err := aws.EnsureNLB(apiLBName, lbInfo.Subnet, "")
 	if err != nil {
 		return fmt.Errorf("cannot create network load balancer: %v", err)
 	}
@@ -372,7 +368,7 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	params.Namespace = name
 	params.ExternalAPIDNSName = apiDNSName
 	params.ExternalAPIPort = 6443
-	params.ExternalAPIIPAddress = apiPublicIP
+	params.ExternalAPIIPAddress = DefaultAPIServerIPAddress
 	params.ExternalOpenVPNDNSName = vpnDNSName
 	params.ExternalOpenVPNPort = 1194
 	params.ExternalOauthPort = externalOauthPort
