@@ -699,7 +699,7 @@ spec:
         - name: KUBERNETES_VERSION
           value: {{ version "kubernetes" }}
         command:
-        - "/usr/bin/control-plane-operator"
+        - "/usr/bin/hypershift-operator"
         - "--initial-ca-file=/etc/kubernetes/config/initial-ca.crt"
         - "--target-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig"
         - "--namespace"

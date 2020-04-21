@@ -52,7 +52,7 @@ const (
 	externalOauthPort     = 8443
 	workerMachineSetCount = 3
 
-	defaultControlPlaneOperatorImage = "registry.svc.ci.openshift.org/hypershift-toolkit/hypershift-4.4:control-plane-operator"
+	defaultControlPlaneOperatorImage = "quay.io/hypershift/hypershift-operator:latest"
 
 	DefaultAPIServerIPAddress = "172.20.0.1"
 )
@@ -389,16 +389,6 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	params.RouterNodePortHTTPS = fmt.Sprintf("%d", routerNodePortHTTPS)
 	params.RouterServiceType = "NodePort"
 	params.Replicas = "1"
-	params.ControlPlaneOperatorControllers = []string{
-		"controller-manager-ca",
-		"auto-approver",
-		"kubeadmin-password",
-		"cluster-operator",
-		"cluster-version",
-		"kubelet-serving-ca",
-		"openshift-apiserver",
-		"openshift-controller-manager",
-	}
 	cpOperatorImage := os.Getenv("CONTROL_PLANE_OPERATOR_IMAGE_OVERRIDE")
 	if cpOperatorImage == "" {
 		params.ControlPlaneOperatorImage = defaultControlPlaneOperatorImage
