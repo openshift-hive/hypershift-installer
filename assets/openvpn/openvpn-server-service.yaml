@@ -5,7 +5,7 @@ metadata:
 spec:
   ports:
   - port: 1194
-    protocol: UDP
+    protocol: TCP
     targetPort: 1194
     nodePort: {{ .OpenVPNNodePort }}
   selector:

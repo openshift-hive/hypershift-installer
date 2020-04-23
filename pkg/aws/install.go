@@ -312,13 +312,13 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	}
 	log.Infof("Created VPN load balancer with ARN: %s and DNS: %s", vpnLBARN, vpnLBDNS)
 
-	vpnTGARN, err := aws.EnsureUDPTargetGroup(lbInfo.VPC, vpnLBName, vpnNodePort, apiNodePort)
+	vpnTGARN, err := aws.EnsureTargetGroup(lbInfo.VPC, vpnLBName, vpnNodePort)
 	if err != nil {
 		return fmt.Errorf("cannot create VPN target group: %v", err)
 	}
 	log.Infof("Created VPN target group ARN: %s", vpnTGARN)
 
-	if err = aws.EnsureTarget(vpnTGARN, machineID); err != nil {
+	if err = aws.EnsureTarget(vpnTGARN, machineIP); err != nil {
 		return fmt.Errorf("cannot create VPN load balancer target: %v", err)
 	}
 	log.Infof("Created VPN load balancer target to %s", machineID)
@@ -642,7 +642,7 @@ func createVPNServerService(client kubeclient.Interface, namespace string) (int,
 	svc.Spec.Ports = []corev1.ServicePort{
 		{
 			Port:       1194,
-			Protocol:   corev1.ProtocolUDP,
+			Protocol:   corev1.ProtocolTCP,
 			TargetPort: intstr.FromInt(1194),
 		},
 	}
