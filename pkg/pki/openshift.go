@@ -95,7 +95,7 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 		// oauth server
 		cert("oauth-openshift", "root-ca", "openshift-oauth", "openshift",
 			[]string{
-				params.ExternalAPIDNSName,
+				params.ExternalOAuthDNSName,
 			}, nil),
 		cert("openvpn-kube-apiserver-client", "openvpn-ca", "kube-apiserver", "kubernetes", nil, nil),
 		cert("openvpn-worker-client", "openvpn-ca", "worker", "kubernetes", nil, nil),

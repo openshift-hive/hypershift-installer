@@ -22,6 +22,7 @@ import (
 
 	configapi "github.com/openshift/api/config/v1"
 	configclient "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -29,6 +30,7 @@ const (
 	nodesReadyTimeout            = 10 * time.Minute
 	bootstrapPodCompleteTimeout  = 5 * time.Minute
 	clusterOperatorsReadyTimeout = 15 * time.Minute
+	serviceLoadBalancerTimeout   = 5 * time.Minute
 )
 
 func waitForAPIEndpoint(pkiDir, apiDNSName string) error {
@@ -158,4 +160,24 @@ func waitForClusterOperators(cfg *rest.Config) error {
 
 	_, err = clientwatch.UntilWithSync(ctx, listWatcher, &configapi.ClusterOperator{}, nil, clusterOperatorsAreAvailable)
 	return err
+}
+
+func waitForServiceLoadBalancerDNS(client kubeclient.Interface, namespace, name string) (string, error) {
+	var serviceDNS string
+
+	err := wait.PollImmediate(10*time.Second, serviceLoadBalancerTimeout, func() (bool, error) {
+		svc, err := client.CoreV1().Services(namespace).Get(name, metav1.GetOptions{})
+		if err != nil {
+			return false, nil
+		}
+
+		if len(svc.Status.LoadBalancer.Ingress) < 1 {
+			return false, nil
+		}
+
+		serviceDNS = svc.Status.LoadBalancer.Ingress[0].Hostname
+		return true, nil
+	})
+
+	return serviceDNS, errors.Wrap(err, "timed out waiting for FQDN for Service")
 }

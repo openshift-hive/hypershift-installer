@@ -2193,9 +2193,9 @@ func kubeApiserverKubeApiserverVpnclientSecretYaml() (*asset, error) {
 
 var _kubeApiserverOauthmetadataJson = []byte(`{
 {{ if ne .ExternalOauthPort 0 }}
-"issuer": "https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}",
-"authorization_endpoint": "https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}/oauth/authorize",
-"token_endpoint": "https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}/oauth/token",
+"issuer": "https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}",
+"authorization_endpoint": "https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}/oauth/authorize",
+"token_endpoint": "https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}/oauth/token",
 {{ else }}
 "issuer": "https://oauth-openshift.{{ .IngressSubdomain }}",
 "authorization_endpoint": "https://oauth-openshift.{{ .IngressSubdomain }}/oauth/authorize",
@@ -2681,7 +2681,7 @@ data:
     metadata:
       name: openshift-browser-client
     redirectURIs:
-    - https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}/oauth/token/display
+    - https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}/oauth/token/display
     secret: "{{ randomString 32  }}"
 `)
 
@@ -2712,7 +2712,7 @@ data:
     metadata:
       name: openshift-challenging-client
     redirectURIs:
-    - https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}/oauth/token/implicit
+    - https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}/oauth/token/implicit
     respondWithChallenges: true
 `)
 
@@ -2784,12 +2784,12 @@ oauthConfig:
     serviceAccountMethod: prompt
 {{ if .IdentityProviders }}  identityProviders:
 {{ trimTrailingSpace .IdentityProviders | indent 2 }}{{- else }}  identityProviders: []{{- end }}
-  loginURL: https://{{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
+  loginURL: https://{{ .ExternalOAuthDNSName }}:{{ .ExternalAPIPort }}
 {{ if .NamedCerts }}  masterCA: ""
 {{- else }}  masterCA: "/etc/oauth-openshift-config/ca.crt"
 {{- end }}
-  masterPublicURL: https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}
-  masterURL: https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}
+  masterPublicURL: https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}
+  masterURL: https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}
   sessionConfig:
     sessionMaxAgeSeconds: 300
     sessionName: ssn
