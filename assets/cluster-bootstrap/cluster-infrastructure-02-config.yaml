@@ -7,8 +7,8 @@ spec:
   cloudConfig:
     name: ""
 status:
-  apiServerInternalURI: https://{{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
-  apiServerURL: https://{{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
+  apiServerInternalURI: https://{{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}
+  apiServerURL: https://{{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}
   etcdDiscoveryDomain: {{ .BaseDomain }}
   infrastructureName: kubernetes
   platform: {{ if .PlatformType }}{{ .PlatformType }}{{ else }}None {{ end }}

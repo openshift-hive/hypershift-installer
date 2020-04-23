@@ -17,4 +17,4 @@ frontend local_apiserver
 
 backend remote_apiserver
   mode tcp
-  server controlplane {{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
+  server controlplane {{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}

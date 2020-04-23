@@ -319,28 +319,28 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 		return fmt.Errorf("cluster pod CIDR exceeds max address space")
 	}
 
-	apiDNSName, err := waitForServiceLoadBalancerDNS(client, name, kubeAPIServerServiceName)
+	apiAddress, err := waitForServiceLoadBalancerAddress(client, name, kubeAPIServerServiceName)
 	if err != nil {
 		log.WithError(err).Error("failed to get DNS for kube API service")
 		return err
 	}
-	log.Debugf("API DNS from Service Load Balancer: %s", apiDNSName)
+	log.Debugf("API address from Service Load Balancer: %s", apiAddress)
 
-	oauthDNSName, err := waitForServiceLoadBalancerDNS(client, name, oauthServiceName)
+	oauthAddress, err := waitForServiceLoadBalancerAddress(client, name, oauthServiceName)
 	if err != nil {
 		log.WithError(err).Error("failed to get DNS for OAuth")
 		return err
 	}
-	log.Debugf("OAuth DNS from Service Load Balancer: %s", oauthDNSName)
+	log.Debugf("OAuth address from Service Load Balancer: %s", oauthAddress)
 
 	params := api.NewClusterParams()
 	params.Namespace = name
-	params.ExternalAPIDNSName = apiDNSName
+	params.ExternalAPIAddress = apiAddress
 	params.ExternalAPIPort = 6443
 	params.ExternalAPIIPAddress = DefaultAPIServerIPAddress
 	params.ExternalOpenVPNDNSName = vpnDNSName
 	params.ExternalOpenVPNPort = 1194
-	params.ExternalOAuthDNSName = oauthDNSName
+	params.ExternalOAuthAddress = oauthAddress
 	params.ExternalOauthPort = externalOauthPort
 	params.ServiceCIDR = clusterServiceCIDR.String()
 	params.PodCIDR = clusterPodCIDR.String()
@@ -459,10 +459,10 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 
 	if waitForReady {
 		log.Infof("Waiting up to 10 minutes for API endpoint to be available.")
-		if err = waitForAPIEndpoint(pkiDir, apiDNSName); err != nil {
+		if err = waitForAPIEndpoint(pkiDir, apiAddress); err != nil {
 			return fmt.Errorf("failed to access API endpoint: %v", err)
 		}
-		log.Infof("API is available at %s", fmt.Sprintf("https://%s:6443", apiDNSName))
+		log.Infof("API is available at %s", fmt.Sprintf("https://%s:6443", apiAddress))
 
 		log.Infof("Waiting up to 5 minutes for bootstrap pod to complete.")
 		if err = waitForBootstrapPod(client, name); err != nil {
@@ -491,7 +491,7 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 		}
 	}
 
-	log.Infof("Cluster API URL: %s", fmt.Sprintf("https://%s:6443", apiDNSName))
+	log.Infof("Cluster API URL: %s", fmt.Sprintf("https://%s:6443", apiAddress))
 	log.Infof("Kubeconfig is available in secret %q in the %s namespace", "admin-kubeconfig", name)
 	log.Infof("Console URL:  %s", fmt.Sprintf("https://console-openshift-console.%s", params.IngressSubdomain))
 	log.Infof("kubeadmin password is available in secret %q in the %s namespace", "kubeadmin-password", name)

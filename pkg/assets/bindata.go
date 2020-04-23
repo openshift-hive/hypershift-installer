@@ -259,8 +259,8 @@ spec:
   cloudConfig:
     name: ""
 status:
-  apiServerInternalURI: https://{{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
-  apiServerURL: https://{{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
+  apiServerInternalURI: https://{{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}
+  apiServerURL: https://{{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}
   etcdDiscoveryDomain: {{ .BaseDomain }}
   infrastructureName: kubernetes
   platform: {{ if .PlatformType }}{{ .PlatformType }}{{ else }}None {{ end }}
@@ -1273,7 +1273,7 @@ frontend local_apiserver
 
 backend remote_apiserver
   mode tcp
-  server controlplane {{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
+  server controlplane {{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}
 `)
 
 func ignitionFilesEtcKubernetesApiserverProxyConfigHaproxyCfgTemplateBytes() ([]byte, error) {
@@ -2162,9 +2162,9 @@ func kubeApiserverKubeApiserverVpnclientSecretYaml() (*asset, error) {
 
 var _kubeApiserverOauthmetadataJson = []byte(`{
 {{ if ne .ExternalOauthPort 0 }}
-"issuer": "https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}",
-"authorization_endpoint": "https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}/oauth/authorize",
-"token_endpoint": "https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}/oauth/token",
+"issuer": "https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}",
+"authorization_endpoint": "https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}/oauth/authorize",
+"token_endpoint": "https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}/oauth/token",
 {{ else }}
 "issuer": "https://oauth-openshift.{{ .IngressSubdomain }}",
 "authorization_endpoint": "https://oauth-openshift.{{ .IngressSubdomain }}/oauth/authorize",
@@ -2650,7 +2650,7 @@ data:
     metadata:
       name: openshift-browser-client
     redirectURIs:
-    - https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}/oauth/token/display
+    - https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}/oauth/token/display
     secret: "{{ randomString 32  }}"
 `)
 
@@ -2681,7 +2681,7 @@ data:
     metadata:
       name: openshift-challenging-client
     redirectURIs:
-    - https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}/oauth/token/implicit
+    - https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}/oauth/token/implicit
     respondWithChallenges: true
 `)
 
@@ -2753,12 +2753,12 @@ oauthConfig:
     serviceAccountMethod: prompt
 {{ if .IdentityProviders }}  identityProviders:
 {{ trimTrailingSpace .IdentityProviders | indent 2 }}{{- else }}  identityProviders: []{{- end }}
-  loginURL: https://{{ .ExternalOAuthDNSName }}:{{ .ExternalAPIPort }}
+  loginURL: https://{{ .ExternalOAuthAddress }}:{{ .ExternalAPIPort }}
 {{ if .NamedCerts }}  masterCA: ""
 {{- else }}  masterCA: "/etc/oauth-openshift-config/ca.crt"
 {{- end }}
-  masterPublicURL: https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}
-  masterURL: https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}
+  masterPublicURL: https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}
+  masterURL: https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}
   sessionConfig:
     sessionMaxAgeSeconds: 300
     sessionName: ssn

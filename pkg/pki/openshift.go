@@ -19,7 +19,7 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 		ca("openvpn-ca", "openvpn-ca", "openshift"),
 	}
 
-	externalAPIServerAddress := fmt.Sprintf("https://%s:%d", params.ExternalAPIDNSName, params.ExternalAPIPort)
+	externalAPIServerAddress := fmt.Sprintf("https://%s:%d", params.ExternalAPIAddress, params.ExternalAPIPort)
 	internalAPIServerAddress := fmt.Sprintf("https://kube-apiserver:%d", params.InternalAPIPort)
 	kubeconfigs := []kubeconfigSpec{
 		kubeconfig("admin", externalAPIServerAddress, "root-ca", "system:admin", "system:masters"),
@@ -42,7 +42,7 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 				"kube-apiserver",
 				fmt.Sprintf("kube-apiserver.%s.svc", params.Namespace),
 				fmt.Sprintf("kube-apiserver.%s.svc.cluster.local", params.Namespace),
-				params.ExternalAPIDNSName,
+				params.ExternalAPIAddress,
 			},
 			[]string{
 				kubeIP.String(),
@@ -95,7 +95,7 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 		// oauth server
 		cert("oauth-openshift", "root-ca", "openshift-oauth", "openshift",
 			[]string{
-				params.ExternalOAuthDNSName,
+				params.ExternalOAuthAddress,
 			}, nil),
 		cert("openvpn-kube-apiserver-client", "openvpn-ca", "kube-apiserver", "kubernetes", nil, nil),
 		cert("openvpn-worker-client", "openvpn-ca", "worker", "kubernetes", nil, nil),

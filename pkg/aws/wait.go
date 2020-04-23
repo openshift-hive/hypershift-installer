@@ -33,7 +33,7 @@ const (
 	serviceLoadBalancerTimeout   = 5 * time.Minute
 )
 
-func waitForAPIEndpoint(pkiDir, apiDNSName string) error {
+func waitForAPIEndpoint(pkiDir, apiAddress string) error {
 	caCertBytes, err := ioutil.ReadFile(filepath.Join(pkiDir, "root-ca.crt"))
 	if err != nil {
 		return fmt.Errorf("cannot read CA file: %v", err)
@@ -50,7 +50,7 @@ func waitForAPIEndpoint(pkiDir, apiDNSName string) error {
 		Timeout: 3 * time.Second,
 	}
 
-	url := fmt.Sprintf("https://%s:6443/healthz", apiDNSName)
+	url := fmt.Sprintf("https://%s:6443/healthz", apiAddress)
 
 	err = wait.PollImmediate(10*time.Second, apiEndpointTimeout, func() (bool, error) {
 		resp, err := client.Get(url)
@@ -162,22 +162,38 @@ func waitForClusterOperators(cfg *rest.Config) error {
 	return err
 }
 
-func waitForServiceLoadBalancerDNS(client kubeclient.Interface, namespace, name string) (string, error) {
-	var serviceDNS string
+func waitForServiceLoadBalancerAddress(client kubeclient.Interface, namespace, name string) (string, error) {
+	var serviceAddress string
 
-	err := wait.PollImmediate(10*time.Second, serviceLoadBalancerTimeout, func() (bool, error) {
-		svc, err := client.CoreV1().Services(namespace).Get(name, metav1.GetOptions{})
-		if err != nil {
-			return false, nil
+	ctx, cancel := context.WithTimeout(context.Background(), serviceLoadBalancerTimeout)
+	defer cancel()
+	listWatcher := cache.NewListWatchFromClient(client.CoreV1().RESTClient(), "services", namespace, fields.OneTermEqualSelector("metadata.name", name))
+
+	serviceReady := func(event watch.Event) (bool, error) {
+		svc, ok := event.Object.(*corev1.Service)
+		if !ok {
+			return false, fmt.Errorf("unexpected object type")
+		}
+		if svc.Name != name {
+			return false, fmt.Errorf("unexpected service name: %s", svc.Name)
 		}
 
 		if len(svc.Status.LoadBalancer.Ingress) < 1 {
 			return false, nil
 		}
 
-		serviceDNS = svc.Status.LoadBalancer.Ingress[0].Hostname
-		return true, nil
-	})
+		if svc.Status.LoadBalancer.Ingress[0].Hostname != "" {
+			serviceAddress = svc.Status.LoadBalancer.Ingress[0].Hostname
+			return true, nil
+		} else if svc.Status.LoadBalancer.Ingress[0].IP != "" {
+			serviceAddress = svc.Status.LoadBalancer.Ingress[0].IP
+			return true, nil
+		}
 
-	return serviceDNS, errors.Wrap(err, "timed out waiting for FQDN for Service")
+		return false, fmt.Errorf("service's status indicates that it is ready, but neither hostname nor IP are set")
+	}
+
+	_, err := clientwatch.UntilWithSync(ctx, listWatcher, &corev1.Service{}, nil, serviceReady)
+
+	return serviceAddress, errors.Wrap(err, "failed getting address for Service")
 }

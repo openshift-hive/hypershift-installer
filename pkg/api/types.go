@@ -2,12 +2,12 @@ package api
 
 type ClusterParams struct {
 	Namespace                           string                 `json:"namespace"`
-	ExternalAPIDNSName                  string                 `json:"externalAPIDNSName"`
+	ExternalAPIAddress                  string                 `json:"externalAPIAddress"`
 	ExternalAPIPort                     uint                   `json:"externalAPIPort"`
 	ExternalAPIIPAddress                string                 `json:"externalAPIAddress"`
 	ExternalOpenVPNDNSName              string                 `json:"externalVPNDNSName"`
 	ExternalOpenVPNPort                 uint                   `json:"externalVPNPort"`
-	ExternalOAuthDNSName                string                 `json:"externalOAuthDNSName"`
+	ExternalOAuthAddress                string                 `json:"externalOAuthAddress"`
 	ExternalOauthPort                   uint                   `json:"externalOauthPort"`
 	IdentityProviders                   string                 `json:"identityProviders"`
 	ServiceCIDR                         string                 `json:"serviceCIDR"`

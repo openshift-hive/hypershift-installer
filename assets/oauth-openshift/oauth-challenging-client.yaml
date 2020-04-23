@@ -10,5 +10,5 @@ data:
     metadata:
       name: openshift-challenging-client
     redirectURIs:
-    - https://{{ .ExternalOAuthDNSName }}:{{ .ExternalOauthPort }}/oauth/token/implicit
+    - https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}/oauth/token/implicit
     respondWithChallenges: true
