@@ -42,7 +42,6 @@
 // assets/kube-apiserver/kube-apiserver-deployment.yaml
 // assets/kube-apiserver/kube-apiserver-oauth-metadata-configmap.yaml
 // assets/kube-apiserver/kube-apiserver-secret.yaml
-// assets/kube-apiserver/kube-apiserver-service.yaml
 // assets/kube-apiserver/kube-apiserver-vpnclient-config.yaml
 // assets/kube-apiserver/kube-apiserver-vpnclient-secret.yaml
 // assets/kube-apiserver/oauthMetadata.json
@@ -2108,36 +2107,6 @@ func kubeApiserverKubeApiserverSecretYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _kubeApiserverKubeApiserverServiceYaml = []byte(`apiVersion: v1
-kind: Service
-metadata:
-  name: kube-apiserver
-spec:
-  ports:
-  - port: {{ .InternalAPIPort }}
-    protocol: TCP
-    targetPort: {{ .InternalAPIPort }}
-    nodePort: {{ .APINodePort }}
-  selector:
-    app: kube-apiserver
-  type: NodePort
-`)
-
-func kubeApiserverKubeApiserverServiceYamlBytes() ([]byte, error) {
-	return _kubeApiserverKubeApiserverServiceYaml, nil
-}
-
-func kubeApiserverKubeApiserverServiceYaml() (*asset, error) {
-	bytes, err := kubeApiserverKubeApiserverServiceYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4573,7 +4542,6 @@ var _bindata = map[string]func() (*asset, error){
 	"kube-apiserver/kube-apiserver-deployment.yaml":                                   kubeApiserverKubeApiserverDeploymentYaml,
 	"kube-apiserver/kube-apiserver-oauth-metadata-configmap.yaml":                     kubeApiserverKubeApiserverOauthMetadataConfigmapYaml,
 	"kube-apiserver/kube-apiserver-secret.yaml":                                       kubeApiserverKubeApiserverSecretYaml,
-	"kube-apiserver/kube-apiserver-service.yaml":                                      kubeApiserverKubeApiserverServiceYaml,
 	"kube-apiserver/kube-apiserver-vpnclient-config.yaml":                             kubeApiserverKubeApiserverVpnclientConfigYaml,
 	"kube-apiserver/kube-apiserver-vpnclient-secret.yaml":                             kubeApiserverKubeApiserverVpnclientSecretYaml,
 	"kube-apiserver/oauthMetadata.json":                                               kubeApiserverOauthmetadataJson,
@@ -4751,7 +4719,6 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"kube-apiserver-deployment.yaml":               {kubeApiserverKubeApiserverDeploymentYaml, map[string]*bintree{}},
 		"kube-apiserver-oauth-metadata-configmap.yaml": {kubeApiserverKubeApiserverOauthMetadataConfigmapYaml, map[string]*bintree{}},
 		"kube-apiserver-secret.yaml":                   {kubeApiserverKubeApiserverSecretYaml, map[string]*bintree{}},
-		"kube-apiserver-service.yaml":                  {kubeApiserverKubeApiserverServiceYaml, map[string]*bintree{}},
 		"kube-apiserver-vpnclient-config.yaml":         {kubeApiserverKubeApiserverVpnclientConfigYaml, map[string]*bintree{}},
 		"kube-apiserver-vpnclient-secret.yaml":         {kubeApiserverKubeApiserverVpnclientSecretYaml, map[string]*bintree{}},
 		"oauthMetadata.json":                           {kubeApiserverOauthmetadataJson, map[string]*bintree{}},

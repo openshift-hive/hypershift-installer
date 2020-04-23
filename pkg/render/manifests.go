@@ -99,7 +99,6 @@ func (c *clusterManifestContext) oauthOpenshiftServer() {
 func (c *clusterManifestContext) kubeAPIServer(includeVPN bool) {
 	c.addManifestFiles(
 		"kube-apiserver/kube-apiserver-deployment.yaml",
-		"kube-apiserver/kube-apiserver-service.yaml",
 		"kube-apiserver/kube-apiserver-config-configmap.yaml",
 		"kube-apiserver/kube-apiserver-oauth-metadata-configmap.yaml",
 	)

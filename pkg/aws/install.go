@@ -62,7 +62,6 @@ const (
 
 var (
 	excludeManifests = []string{
-		"kube-apiserver-service.yaml",
 		"openshift-apiserver-service.yaml",
 		"openvpn-server-service.yaml",
 		"v4-0-config-system-branding.yaml",
@@ -343,7 +342,6 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	params.ExternalOpenVPNPort = 1194
 	params.ExternalOAuthDNSName = oauthDNSName
 	params.ExternalOauthPort = externalOauthPort
-	params.APINodePort = uint(apiNodePort)
 	params.ServiceCIDR = clusterServiceCIDR.String()
 	params.PodCIDR = clusterPodCIDR.String()
 	params.ReleaseImage = releaseImage

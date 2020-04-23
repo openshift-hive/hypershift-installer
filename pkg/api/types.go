@@ -14,7 +14,6 @@ type ClusterParams struct {
 	NamedCerts                          []NamedCert            `json:"namedCerts,omitempty"`
 	PodCIDR                             string                 `json:"podCIDR"`
 	ReleaseImage                        string                 `json:"releaseImage"`
-	APINodePort                         uint                   `json:"apiNodePort"`
 	IngressSubdomain                    string                 `json:"ingressSubdomain"`
 	OpenShiftAPIClusterIP               string                 `json:"openshiftAPIClusterIP"`
 	ImageRegistryHTTPSecret             string                 `json:"imageRegistryHTTPSecret"`
