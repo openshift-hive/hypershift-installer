@@ -1661,7 +1661,7 @@ verb 3
 nobind
 dev tun
 remote-cert-tls server
-remote openvpn-server 1194 udp
+remote openvpn-server 1194 tcp
 ca secret/ca.crt
 cert secret/tls.crt
 key secret/tls.key
@@ -3893,7 +3893,7 @@ verb 3
 nobind
 dev tun
 remote-cert-tls server
-remote {{ .ExternalOpenVPNDNSName }} {{ .ExternalOpenVPNPort }} udp
+remote {{ .ExternalOpenVPNDNSName }} {{ .ExternalOpenVPNPort }} tcp
 ca ca.crt
 cert tls.crt
 key tls.key
@@ -4201,7 +4201,7 @@ metadata:
 spec:
   ports:
   - port: 1194
-    protocol: UDP
+    protocol: TCP
     targetPort: 1194
     nodePort: {{ .OpenVPNNodePort }}
   selector:
@@ -4237,7 +4237,7 @@ keepalive 10 60
 persist-key
 persist-tun
 
-proto udp
+proto tcp
 # Rely on Docker to do port mapping, internally always 1194
 port 1194
 dev tun0

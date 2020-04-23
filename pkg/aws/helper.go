@@ -347,55 +347,7 @@ func (h *AWSHelper) RemoveTargetGroup(tgName string) error {
 	return err
 }
 
-// EnsureUDPTargetGroup ensures that a UDP target group exists with the given port and healt check port
-func (h *AWSHelper) EnsureUDPTargetGroup(vpc, tgName string, port, healthCheckPort int) (string, error) {
-	output, err := h.elbClient.DescribeTargetGroups(&elbv2.DescribeTargetGroupsInput{
-		Names: []*string{aws.String(tgName)},
-	})
-	notFound := false
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			if awsErr.Code() == elbv2.ErrCodeTargetGroupNotFoundException {
-				notFound = true
-			}
-		}
-		if !notFound {
-			return "", err
-		}
-	}
-	if !notFound && len(output.TargetGroups) > 0 {
-		tg := output.TargetGroups[0]
-		if aws.Int64Value(tg.Port) == int64(port) {
-			return aws.StringValue(tg.TargetGroupArn), nil
-		}
-		_, err := h.elbClient.DeleteTargetGroup(&elbv2.DeleteTargetGroupInput{
-			TargetGroupArn: tg.TargetGroupArn,
-		})
-		if err != nil {
-			return "", err
-		}
-	}
-	tgResult, err := h.elbClient.CreateTargetGroup(&elbv2.CreateTargetGroupInput{
-		Name:                       aws.String(tgName),
-		Protocol:                   aws.String("UDP"),
-		Port:                       aws.Int64(int64(port)),
-		VpcId:                      aws.String(vpc),
-		TargetType:                 aws.String(elbv2.TargetTypeEnumInstance),
-		HealthCheckProtocol:        aws.String(elbv2.ProtocolEnumTcp),
-		HealthCheckPort:            aws.String(fmt.Sprintf("%d", healthCheckPort)),
-		HealthCheckEnabled:         aws.Bool(true),
-		HealthCheckIntervalSeconds: aws.Int64(10),
-		HealthCheckTimeoutSeconds:  aws.Int64(10),
-		HealthyThresholdCount:      aws.Int64(2),
-		UnhealthyThresholdCount:    aws.Int64(2),
-	})
-	if err != nil {
-		return "", err
-	}
-	return aws.StringValue(tgResult.TargetGroups[0].TargetGroupArn), nil
-}
-
-func (h *AWSHelper) EnsureListener(lbARN, tgARN string, port int, udp bool) error {
+func (h *AWSHelper) EnsureListener(lbARN, tgARN string, port int, tcp bool) error {
 	listeners, err := h.elbClient.DescribeListeners(&elbv2.DescribeListenersInput{
 		LoadBalancerArn: aws.String(lbARN),
 	})
@@ -417,8 +369,8 @@ func (h *AWSHelper) EnsureListener(lbARN, tgARN string, port int, udp bool) erro
 		}
 	}
 	protocol := elbv2.ProtocolEnumTcp
-	if udp {
-		protocol = "UDP"
+	if tcp {
+		protocol = "TCP"
 	}
 	_, err = h.elbClient.CreateListener(&elbv2.CreateListenerInput{
 		Port:            aws.Int64(int64(port)),
@@ -522,7 +474,6 @@ func (h *AWSHelper) EnsureWorkersAllowNodePortAccess() error {
 	}
 	sg := result.SecurityGroups[0]
 	foundTCPRule := false
-	foundUDPRule := false
 	for _, permission := range sg.IpPermissions {
 		if aws.Int64Value(permission.FromPort) == 30000 && aws.Int64Value(permission.ToPort) == 32767 {
 			if aws.StringValue(permission.IpProtocol) == "tcp" {
@@ -533,16 +484,8 @@ func (h *AWSHelper) EnsureWorkersAllowNodePortAccess() error {
 					}
 				}
 			}
-			if aws.StringValue(permission.IpProtocol) == "udp" {
-				for _, ipRange := range permission.IpRanges {
-					if aws.StringValue(ipRange.CidrIp) == "0.0.0.0/0" {
-						foundUDPRule = true
-						break
-					}
-				}
-			}
 		}
-		if foundTCPRule && foundUDPRule {
+		if foundTCPRule {
 			break
 		}
 	}
@@ -553,18 +496,6 @@ func (h *AWSHelper) EnsureWorkersAllowNodePortAccess() error {
 			FromPort:   aws.Int64(30000),
 			ToPort:     aws.Int64(32767),
 			CidrIp:     aws.String("10.0.0.0/16"),
-		})
-		if err != nil {
-			return err
-		}
-	}
-	if !foundUDPRule {
-		_, err := h.ec2Client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-			GroupId:    sg.GroupId,
-			IpProtocol: aws.String("udp"),
-			FromPort:   aws.Int64(30000),
-			ToPort:     aws.Int64(32767),
-			CidrIp:     aws.String("0.0.0.0/0"),
 		})
 		if err != nil {
 			return err
