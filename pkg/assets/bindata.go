@@ -42,7 +42,6 @@
 // assets/kube-apiserver/kube-apiserver-deployment.yaml
 // assets/kube-apiserver/kube-apiserver-oauth-metadata-configmap.yaml
 // assets/kube-apiserver/kube-apiserver-secret.yaml
-// assets/kube-apiserver/kube-apiserver-service.yaml
 // assets/kube-apiserver/kube-apiserver-vpnclient-config.yaml
 // assets/kube-apiserver/kube-apiserver-vpnclient-secret.yaml
 // assets/kube-apiserver/oauthMetadata.json
@@ -260,8 +259,8 @@ spec:
   cloudConfig:
     name: ""
 status:
-  apiServerInternalURI: https://{{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
-  apiServerURL: https://{{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
+  apiServerInternalURI: https://{{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}
+  apiServerURL: https://{{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}
   etcdDiscoveryDomain: {{ .BaseDomain }}
   infrastructureName: kubernetes
   platform: {{ if .PlatformType }}{{ .PlatformType }}{{ else }}None {{ end }}
@@ -1274,7 +1273,7 @@ frontend local_apiserver
 
 backend remote_apiserver
   mode tcp
-  server controlplane {{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
+  server controlplane {{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}
 `)
 
 func ignitionFilesEtcKubernetesApiserverProxyConfigHaproxyCfgTemplateBytes() ([]byte, error) {
@@ -2112,36 +2111,6 @@ func kubeApiserverKubeApiserverSecretYaml() (*asset, error) {
 	return a, nil
 }
 
-var _kubeApiserverKubeApiserverServiceYaml = []byte(`apiVersion: v1
-kind: Service
-metadata:
-  name: kube-apiserver
-spec:
-  ports:
-  - port: {{ .InternalAPIPort }}
-    protocol: TCP
-    targetPort: {{ .InternalAPIPort }}
-    nodePort: {{ .APINodePort }}
-  selector:
-    app: kube-apiserver
-  type: NodePort
-`)
-
-func kubeApiserverKubeApiserverServiceYamlBytes() ([]byte, error) {
-	return _kubeApiserverKubeApiserverServiceYaml, nil
-}
-
-func kubeApiserverKubeApiserverServiceYaml() (*asset, error) {
-	bytes, err := kubeApiserverKubeApiserverServiceYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
 var _kubeApiserverKubeApiserverVpnclientConfigYaml = []byte(`kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -2193,9 +2162,9 @@ func kubeApiserverKubeApiserverVpnclientSecretYaml() (*asset, error) {
 
 var _kubeApiserverOauthmetadataJson = []byte(`{
 {{ if ne .ExternalOauthPort 0 }}
-"issuer": "https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}",
-"authorization_endpoint": "https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}/oauth/authorize",
-"token_endpoint": "https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}/oauth/token",
+"issuer": "https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}",
+"authorization_endpoint": "https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}/oauth/authorize",
+"token_endpoint": "https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}/oauth/token",
 {{ else }}
 "issuer": "https://oauth-openshift.{{ .IngressSubdomain }}",
 "authorization_endpoint": "https://oauth-openshift.{{ .IngressSubdomain }}/oauth/authorize",
@@ -2681,7 +2650,7 @@ data:
     metadata:
       name: openshift-browser-client
     redirectURIs:
-    - https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}/oauth/token/display
+    - https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}/oauth/token/display
     secret: "{{ randomString 32  }}"
 `)
 
@@ -2712,7 +2681,7 @@ data:
     metadata:
       name: openshift-challenging-client
     redirectURIs:
-    - https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}/oauth/token/implicit
+    - https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}/oauth/token/implicit
     respondWithChallenges: true
 `)
 
@@ -2784,12 +2753,12 @@ oauthConfig:
     serviceAccountMethod: prompt
 {{ if .IdentityProviders }}  identityProviders:
 {{ trimTrailingSpace .IdentityProviders | indent 2 }}{{- else }}  identityProviders: []{{- end }}
-  loginURL: https://{{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}
+  loginURL: https://{{ .ExternalOAuthAddress }}:{{ .ExternalAPIPort }}
 {{ if .NamedCerts }}  masterCA: ""
 {{- else }}  masterCA: "/etc/oauth-openshift-config/ca.crt"
 {{- end }}
-  masterPublicURL: https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}
-  masterURL: https://{{ .ExternalAPIDNSName }}:{{ .ExternalOauthPort }}
+  masterPublicURL: https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}
+  masterURL: https://{{ .ExternalOAuthAddress }}:{{ .ExternalOauthPort }}
   sessionConfig:
     sessionMaxAgeSeconds: 300
     sessionName: ssn
@@ -3893,7 +3862,7 @@ verb 3
 nobind
 dev tun
 remote-cert-tls server
-remote {{ .ExternalOpenVPNDNSName }} {{ .ExternalOpenVPNPort }} tcp
+remote {{ .ExternalOpenVPNAddress }} {{ .ExternalOpenVPNPort }} tcp
 ca ca.crt
 cert tls.crt
 key tls.key
@@ -4573,7 +4542,6 @@ var _bindata = map[string]func() (*asset, error){
 	"kube-apiserver/kube-apiserver-deployment.yaml":                                   kubeApiserverKubeApiserverDeploymentYaml,
 	"kube-apiserver/kube-apiserver-oauth-metadata-configmap.yaml":                     kubeApiserverKubeApiserverOauthMetadataConfigmapYaml,
 	"kube-apiserver/kube-apiserver-secret.yaml":                                       kubeApiserverKubeApiserverSecretYaml,
-	"kube-apiserver/kube-apiserver-service.yaml":                                      kubeApiserverKubeApiserverServiceYaml,
 	"kube-apiserver/kube-apiserver-vpnclient-config.yaml":                             kubeApiserverKubeApiserverVpnclientConfigYaml,
 	"kube-apiserver/kube-apiserver-vpnclient-secret.yaml":                             kubeApiserverKubeApiserverVpnclientSecretYaml,
 	"kube-apiserver/oauthMetadata.json":                                               kubeApiserverOauthmetadataJson,
@@ -4751,7 +4719,6 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"kube-apiserver-deployment.yaml":               {kubeApiserverKubeApiserverDeploymentYaml, map[string]*bintree{}},
 		"kube-apiserver-oauth-metadata-configmap.yaml": {kubeApiserverKubeApiserverOauthMetadataConfigmapYaml, map[string]*bintree{}},
 		"kube-apiserver-secret.yaml":                   {kubeApiserverKubeApiserverSecretYaml, map[string]*bintree{}},
-		"kube-apiserver-service.yaml":                  {kubeApiserverKubeApiserverServiceYaml, map[string]*bintree{}},
 		"kube-apiserver-vpnclient-config.yaml":         {kubeApiserverKubeApiserverVpnclientConfigYaml, map[string]*bintree{}},
 		"kube-apiserver-vpnclient-secret.yaml":         {kubeApiserverKubeApiserverVpnclientSecretYaml, map[string]*bintree{}},
 		"oauthMetadata.json":                           {kubeApiserverOauthmetadataJson, map[string]*bintree{}},
