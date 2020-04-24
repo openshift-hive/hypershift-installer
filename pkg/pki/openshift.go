@@ -90,7 +90,7 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 			[]string{
 				"openvpn-server",
 				fmt.Sprintf("openvpn-server.%s.svc", params.Namespace),
-				params.ExternalOpenVPNDNSName,
+				params.ExternalOpenVPNAddress,
 			}, nil),
 		// oauth server
 		cert("oauth-openshift", "root-ca", "openshift-oauth", "openshift",

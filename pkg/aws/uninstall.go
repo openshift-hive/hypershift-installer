@@ -51,23 +51,6 @@ func UninstallCluster(name string) error {
 		return fmt.Errorf("cannot create an AWS client: %v", err)
 	}
 
-	log.Infof("Removing VPN DNS record")
-	vpnDNSName := fmt.Sprintf("vpn.%s.%s.", name, parentDomain)
-	if err = aws.RemoveCNameRecord(dnsZoneID, vpnDNSName); err != nil {
-		return fmt.Errorf("cannot delete VPN DNS resource record: %v", err)
-	}
-
-	log.Infof("Removing VPN load balancer")
-	vpnLBName := generateLBResourceName(infraName, name, "vpn")
-	if err = aws.RemoveNLB(vpnLBName); err != nil {
-		return fmt.Errorf("cannot delete VPN load balancer: %v", err)
-	}
-
-	log.Infof("Removing VPN target group")
-	if err = aws.RemoveTargetGroup(vpnLBName); err != nil {
-		return fmt.Errorf("cannot delete VPN target group: %v", err)
-	}
-
 	log.Infof("Removing router DNS record")
 	routerDNSName := fmt.Sprintf("\\052.apps.%s.%s.", name, parentDomain)
 	if err = aws.RemoveCNameRecord(dnsZoneID, routerDNSName); err != nil {

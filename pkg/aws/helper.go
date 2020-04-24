@@ -347,7 +347,7 @@ func (h *AWSHelper) RemoveTargetGroup(tgName string) error {
 	return err
 }
 
-func (h *AWSHelper) EnsureListener(lbARN, tgARN string, port int, tcp bool) error {
+func (h *AWSHelper) EnsureListener(lbARN, tgARN string, port int) error {
 	listeners, err := h.elbClient.DescribeListeners(&elbv2.DescribeListenersInput{
 		LoadBalancerArn: aws.String(lbARN),
 	})
@@ -368,14 +368,11 @@ func (h *AWSHelper) EnsureListener(lbARN, tgARN string, port int, tcp bool) erro
 			return err
 		}
 	}
-	protocol := elbv2.ProtocolEnumTcp
-	if tcp {
-		protocol = "TCP"
-	}
+
 	_, err = h.elbClient.CreateListener(&elbv2.CreateListenerInput{
 		Port:            aws.Int64(int64(port)),
 		LoadBalancerArn: aws.String(lbARN),
-		Protocol:        aws.String(protocol),
+		Protocol:        aws.String(elbv2.ProtocolEnumTcp),
 		DefaultActions: []*elbv2.Action{
 			{
 				TargetGroupArn: aws.String(tgARN),

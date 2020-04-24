@@ -58,12 +58,12 @@ const (
 
 	kubeAPIServerServiceName = "kube-apiserver"
 	oauthServiceName         = "oauth-openshift"
+	vpnServiceName           = "openvpn-server"
 )
 
 var (
 	excludeManifests = []string{
 		"openshift-apiserver-service.yaml",
-		"openvpn-server-service.yaml",
 		"v4-0-config-system-branding.yaml",
 		"oauth-server-service.yaml",
 	}
@@ -183,11 +183,11 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	log.Infof("Created Kube API service with NodePort %d", apiNodePort)
 
 	log.Infof("Creating VPN service")
-	vpnNodePort, err := createVPNServerService(client, name)
-	if err != nil {
-		return fmt.Errorf("failed to create vpn server service: %v", err)
+	if err := createVPNServerService(client, name); err != nil {
+		log.WithError(err).Error("failed to create vpn server service")
+		return err
 	}
-	log.Infof("Created VPN service with NodePort %d", vpnNodePort)
+	log.Info("Created VPN service")
 
 	log.Infof("Creating Openshift API service")
 	openshiftClusterIP, err := createOpenshiftService(client, name)
@@ -234,7 +234,7 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	}
 	log.Infof("Created router HTTP target group ARN: %s", routerHTTPARN)
 
-	err = aws.EnsureListener(routerLBARN, routerHTTPARN, 80, false)
+	err = aws.EnsureListener(routerLBARN, routerHTTPARN, 80)
 	if err != nil {
 		return fmt.Errorf("cannot create router HTTP listener: %v", err)
 	}
@@ -247,7 +247,7 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	}
 	log.Infof("Created router HTTPS target group ARN: %s", routerHTTPSARN)
 
-	err = aws.EnsureListener(routerLBARN, routerHTTPSARN, 443, false)
+	err = aws.EnsureListener(routerLBARN, routerHTTPSARN, 443)
 	if err != nil {
 		return fmt.Errorf("cannot create router HTTPS listener: %v", err)
 	}
@@ -259,37 +259,6 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 		return fmt.Errorf("cannot create router DNS record: %v", err)
 	}
 	log.Infof("Created DNS record for router name: %s", routerDNSName)
-
-	vpnLBName := generateLBResourceName(infraName, name, "vpn")
-	vpnLBARN, vpnLBDNS, err := aws.EnsureNLB(vpnLBName, lbInfo.Subnet, "")
-	if err != nil {
-		return fmt.Errorf("cannot create vpn load balancer: %v", err)
-	}
-	log.Infof("Created VPN load balancer with ARN: %s and DNS: %s", vpnLBARN, vpnLBDNS)
-
-	vpnTGARN, err := aws.EnsureTargetGroup(lbInfo.VPC, vpnLBName, vpnNodePort)
-	if err != nil {
-		return fmt.Errorf("cannot create VPN target group: %v", err)
-	}
-	log.Infof("Created VPN target group ARN: %s", vpnTGARN)
-
-	if err = aws.EnsureTarget(vpnTGARN, machineIP); err != nil {
-		return fmt.Errorf("cannot create VPN load balancer target: %v", err)
-	}
-	log.Infof("Created VPN load balancer target to %s", machineID)
-
-	err = aws.EnsureListener(vpnLBARN, vpnTGARN, 1194, true)
-	if err != nil {
-		return fmt.Errorf("cannot create VPN listener: %v", err)
-	}
-	log.Infof("Created VPN load balancer listener")
-
-	vpnDNSName := fmt.Sprintf("vpn.%s.%s", name, parentDomain)
-	err = aws.EnsureCNameRecord(dnsZoneID, vpnDNSName, vpnLBDNS)
-	if err != nil {
-		return fmt.Errorf("cannot create router DNS record: %v", err)
-	}
-	log.Infof("Created DNS record for VPN: %s", vpnDNSName)
 
 	err = aws.EnsureWorkersAllowNodePortAccess()
 	if err != nil {
@@ -321,24 +290,30 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 
 	apiAddress, err := waitForServiceLoadBalancerAddress(client, name, kubeAPIServerServiceName)
 	if err != nil {
-		log.WithError(err).Error("failed to get DNS for kube API service")
+		log.WithError(err).Error("failed to get kube API service address")
 		return err
 	}
 	log.Debugf("API address from Service Load Balancer: %s", apiAddress)
 
 	oauthAddress, err := waitForServiceLoadBalancerAddress(client, name, oauthServiceName)
 	if err != nil {
-		log.WithError(err).Error("failed to get DNS for OAuth")
+		log.WithError(err).Error("failed to get OAuth service address")
 		return err
 	}
 	log.Debugf("OAuth address from Service Load Balancer: %s", oauthAddress)
+
+	vpnAddress, err := waitForServiceLoadBalancerAddress(client, name, vpnServiceName)
+	if err != nil {
+		log.WithError(err).Error("failed to get VPN service address")
+		return err
+	}
 
 	params := api.NewClusterParams()
 	params.Namespace = name
 	params.ExternalAPIAddress = apiAddress
 	params.ExternalAPIPort = 6443
 	params.ExternalAPIIPAddress = DefaultAPIServerIPAddress
-	params.ExternalOpenVPNDNSName = vpnDNSName
+	params.ExternalOpenVPNAddress = vpnAddress
 	params.ExternalOpenVPNPort = 1194
 	params.ExternalOAuthAddress = oauthAddress
 	params.ExternalOauthPort = externalOauthPort
@@ -347,7 +322,6 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	params.ReleaseImage = releaseImage
 	params.IngressSubdomain = fmt.Sprintf("apps.%s.%s", name, parentDomain)
 	params.OpenShiftAPIClusterIP = openshiftClusterIP
-	params.OpenVPNNodePort = fmt.Sprintf("%d", vpnNodePort)
 	params.BaseDomain = fmt.Sprintf("%s.%s", name, parentDomain)
 	params.CloudProvider = "AWS"
 	params.InternalAPIPort = 6443
@@ -603,11 +577,11 @@ func createKubeAPIServerService(client kubeclient.Interface, namespace string) (
 	return int(svc.Spec.Ports[0].NodePort), nil
 }
 
-func createVPNServerService(client kubeclient.Interface, namespace string) (int, error) {
+func createVPNServerService(client kubeclient.Interface, namespace string) error {
 	svc := &corev1.Service{}
-	svc.Name = "openvpn-server"
+	svc.Name = vpnServiceName
 	svc.Spec.Selector = map[string]string{"app": "openvpn-server"}
-	svc.Spec.Type = corev1.ServiceTypeNodePort
+	svc.Spec.Type = corev1.ServiceTypeLoadBalancer
 	svc.Spec.Ports = []corev1.ServicePort{
 		{
 			Port:       1194,
@@ -615,11 +589,8 @@ func createVPNServerService(client kubeclient.Interface, namespace string) (int,
 			TargetPort: intstr.FromInt(1194),
 		},
 	}
-	svc, err := client.CoreV1().Services(namespace).Create(svc)
-	if err != nil {
-		return 0, err
-	}
-	return int(svc.Spec.Ports[0].NodePort), nil
+	_, err := client.CoreV1().Services(namespace).Create(svc)
+	return err
 }
 
 func createOpenshiftService(client kubeclient.Interface, namespace string) (string, error) {

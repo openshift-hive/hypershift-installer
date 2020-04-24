@@ -5,7 +5,7 @@ type ClusterParams struct {
 	ExternalAPIAddress                  string                 `json:"externalAPIAddress"`
 	ExternalAPIPort                     uint                   `json:"externalAPIPort"`
 	ExternalAPIIPAddress                string                 `json:"externalAPIAddress"`
-	ExternalOpenVPNDNSName              string                 `json:"externalVPNDNSName"`
+	ExternalOpenVPNAddress              string                 `json:"externalVPNAddress"`
 	ExternalOpenVPNPort                 uint                   `json:"externalVPNPort"`
 	ExternalOAuthAddress                string                 `json:"externalOAuthAddress"`
 	ExternalOauthPort                   uint                   `json:"externalOauthPort"`
@@ -19,7 +19,6 @@ type ClusterParams struct {
 	ImageRegistryHTTPSecret             string                 `json:"imageRegistryHTTPSecret"`
 	RouterNodePortHTTP                  string                 `json:"routerNodePortHTTP"`
 	RouterNodePortHTTPS                 string                 `json:"routerNodePortHTTPS"`
-	OpenVPNNodePort                     string                 `json:"openVPNNodePort"`
 	BaseDomain                          string                 `json:"baseDomain"`
 	NetworkType                         string                 `json:"networkType"`
 	Replicas                            string                 `json:"replicas"`

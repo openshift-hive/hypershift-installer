@@ -3862,7 +3862,7 @@ verb 3
 nobind
 dev tun
 remote-cert-tls server
-remote {{ .ExternalOpenVPNDNSName }} {{ .ExternalOpenVPNPort }} tcp
+remote {{ .ExternalOpenVPNAddress }} {{ .ExternalOpenVPNPort }} tcp
 ca ca.crt
 cert tls.crt
 key tls.key
