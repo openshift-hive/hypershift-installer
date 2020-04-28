@@ -71,6 +71,7 @@ func (c *clusterManifestContext) setupManifests(etcd bool, vpn bool, externalOau
 	}
 	c.userManifestsBootstrapper()
 	c.controlPlaneOperator()
+	c.routerProxy()
 }
 
 func (c *clusterManifestContext) etcd() {
@@ -208,6 +209,16 @@ func (c *clusterManifestContext) openVPN() {
 func (c *clusterManifestContext) clusterVersionOperator() {
 	c.addManifestFiles(
 		"cluster-version-operator/cluster-version-operator-deployment.yaml",
+	)
+}
+
+func (c *clusterManifestContext) routerProxy() {
+	c.addManifestFiles(
+		"router-proxy/router-proxy-deployment.yaml",
+		"router-proxy/router-proxy-configmap.yaml",
+		"router-proxy/router-proxy-vpnclient-configmap.yaml",
+		"router-proxy/router-proxy-http-service.yaml",
+		"router-proxy/router-proxy-https-service.yaml",
 	)
 }
 

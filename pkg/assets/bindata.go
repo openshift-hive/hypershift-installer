@@ -95,6 +95,14 @@
 // assets/openvpn/server.conf
 // assets/openvpn/worker
 // assets/registry/cluster-imageregistry-config.yaml
+// assets/router-proxy/client.conf
+// assets/router-proxy/haproxy.cfg
+// assets/router-proxy/router-proxy-configmap.yaml
+// assets/router-proxy/router-proxy-deployment.yaml
+// assets/router-proxy/router-proxy-http-service.yaml
+// assets/router-proxy/router-proxy-https-service.yaml
+// assets/router-proxy/router-proxy-vpnclient-configmap.yaml
+// assets/router-proxy/router-proxy-vpnclient-secret.yaml
 // assets/user-manifests-bootstrapper/user-manifest-template.yaml
 // assets/user-manifests-bootstrapper/user-manifests-bootstrapper-pod.yaml
 // DO NOT EDIT!
@@ -315,10 +323,8 @@ metadata:
   name: default
   namespace: openshift-ingress-operator
 spec:
-  nodePlacement:
-    tolerations:
-    - key: dedicated
-      value: edge
+  endpointPublishingStrategy:
+    type: Private
 status: {}
 `)
 
@@ -1997,7 +2003,7 @@ spec:
 {{ end }}
 {{ if includeVPN }}
       - name: openvpn-client
-        image: quay.io/sjenning/poc:openvpn
+        image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
         - /usr/sbin/openvpn
@@ -4310,6 +4316,314 @@ func registryClusterImageregistryConfigYaml() (*asset, error) {
 	return a, nil
 }
 
+var _routerProxyClientConf = []byte(`client
+verb 3
+nobind
+dev tun
+remote-cert-tls server
+remote openvpn-server 1194 tcp
+ca secret/ca.crt
+cert secret/tls.crt
+key secret/tls.key
+`)
+
+func routerProxyClientConfBytes() ([]byte, error) {
+	return _routerProxyClientConf, nil
+}
+
+func routerProxyClientConf() (*asset, error) {
+	bytes, err := routerProxyClientConfBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "router-proxy/client.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _routerProxyHaproxyCfg = []byte(`global
+  maxconn 7000
+
+defaults
+  mode tcp
+  timeout client 10m
+  timeout server 10m
+  timeout connect 10s
+  timeout client-fin 5s
+  timeout server-fin 5s
+  timeout queue 5s
+  retries 3
+
+frontend local_router_http
+  bind :8080
+  default_backend remote_router_http
+
+frontend local_router_https
+  bind :8443
+  default_backend remote_router_https
+
+backend remote_router_http
+  mode tcp
+  server remote_http ${ROUTER_SERVICE_IP}:80
+
+backend remote_router_https
+  mode tcp
+  server remote_https ${ROUTER_SERVICE_IP}:443
+`)
+
+func routerProxyHaproxyCfgBytes() ([]byte, error) {
+	return _routerProxyHaproxyCfg, nil
+}
+
+func routerProxyHaproxyCfg() (*asset, error) {
+	bytes, err := routerProxyHaproxyCfgBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "router-proxy/haproxy.cfg", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _routerProxyRouterProxyConfigmapYaml = []byte(`kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: router-proxy-config
+data:
+  haproxy.cfg: |-
+{{ include "router-proxy/haproxy.cfg" 4 }}
+`)
+
+func routerProxyRouterProxyConfigmapYamlBytes() ([]byte, error) {
+	return _routerProxyRouterProxyConfigmapYaml, nil
+}
+
+func routerProxyRouterProxyConfigmapYaml() (*asset, error) {
+	bytes, err := routerProxyRouterProxyConfigmapYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "router-proxy/router-proxy-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _routerProxyRouterProxyDeploymentYaml = []byte(`kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: router-proxy
+  labels:
+    app: router-proxy
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: router-proxy
+  template:
+    metadata:
+      labels:
+        app: router-proxy
+    spec:
+      initContainers:
+      - name: service-ip
+        image: {{ imageFor "cli" }}
+        env:
+        - name: KUBECONFIG
+          value: /etc/openshift/kubeconfig
+        command:
+        - /bin/bash
+        args:
+        - -c
+        - |-
+          #!/bin/bash
+          while ! oc get service -n openshift-ingress router-internal-default; do
+            echo "Waiting for the internal default router to be available"
+            sleep 30
+          done
+          export ROUTER_SERVICE_IP="$(oc get service -n openshift-ingress router-internal-default -o jsonpath='{ .spec.clusterIP }')"
+          sed -e "s/\${ROUTER_SERVICE_IP}/${ROUTER_SERVICE_IP}/" /config-template/haproxy.cfg > /config/haproxy.cfg
+        volumeMounts:
+        - name: config-template
+          mountPath: /config-template
+        - name: config
+          mountPath: /config
+        - name: kubeconfig
+          mountPath: /etc/openshift
+      containers:
+      - name: router-proxy
+        image: {{ imageFor "haproxy-router" }}
+        command:
+        - haproxy
+        args:
+        - -f
+        - /usr/local/etc/haproxy/haproxy.cfg
+        ports:
+        - containerPort: 8443
+          name: https
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /usr/local/etc/haproxy
+      - name: openvpn-client
+        image: quay.io/hypershift/openvpn:latest
+        imagePullPolicy: Always
+        command:
+        - /usr/sbin/openvpn
+        - --config
+        - /etc/openvpn/config/client.conf
+        workingDir: /etc/openvpn/
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/openvpn/secret
+          name: vpnsecret
+        - mountPath: /etc/openvpn/config
+          name: vpnconfig
+      volumes:
+      - name: config-template
+        configMap:
+          name: router-proxy-config
+      - name: config
+        emptyDir: {}
+      - name: kubeconfig
+        secret:
+          secretName: service-network-admin-kubeconfig
+      - configMap:
+          name: router-proxy-vpnclient-config
+        name: vpnconfig
+      - secret:
+          secretName: router-proxy-vpnclient-secret
+        name: vpnsecret
+`)
+
+func routerProxyRouterProxyDeploymentYamlBytes() ([]byte, error) {
+	return _routerProxyRouterProxyDeploymentYaml, nil
+}
+
+func routerProxyRouterProxyDeploymentYaml() (*asset, error) {
+	bytes, err := routerProxyRouterProxyDeploymentYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "router-proxy/router-proxy-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _routerProxyRouterProxyHttpServiceYaml = []byte(`kind: Service
+apiVersion: v1
+metadata:
+  name: router-http
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: router-proxy
+`)
+
+func routerProxyRouterProxyHttpServiceYamlBytes() ([]byte, error) {
+	return _routerProxyRouterProxyHttpServiceYaml, nil
+}
+
+func routerProxyRouterProxyHttpServiceYaml() (*asset, error) {
+	bytes, err := routerProxyRouterProxyHttpServiceYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "router-proxy/router-proxy-http-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _routerProxyRouterProxyHttpsServiceYaml = []byte(`kind: Service
+apiVersion: v1
+metadata:
+  name: router-https
+spec:
+  ports:
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: https
+  selector:
+    app: router-proxy
+`)
+
+func routerProxyRouterProxyHttpsServiceYamlBytes() ([]byte, error) {
+	return _routerProxyRouterProxyHttpsServiceYaml, nil
+}
+
+func routerProxyRouterProxyHttpsServiceYaml() (*asset, error) {
+	bytes, err := routerProxyRouterProxyHttpsServiceYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "router-proxy/router-proxy-https-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _routerProxyRouterProxyVpnclientConfigmapYaml = []byte(`kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: router-proxy-vpnclient-config
+data:
+  client.conf: |-
+{{ include "router-proxy/client.conf" 4 }}
+`)
+
+func routerProxyRouterProxyVpnclientConfigmapYamlBytes() ([]byte, error) {
+	return _routerProxyRouterProxyVpnclientConfigmapYaml, nil
+}
+
+func routerProxyRouterProxyVpnclientConfigmapYaml() (*asset, error) {
+	bytes, err := routerProxyRouterProxyVpnclientConfigmapYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "router-proxy/router-proxy-vpnclient-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _routerProxyRouterProxyVpnclientSecretYaml = []byte(`kind: Secret
+apiVersion: v1
+metadata:
+  name: router-proxy-vpnclient-secret
+data:
+  tls.crt: {{ pki "openvpn-router-proxy-client.crt" }}
+  tls.key: {{ pki "openvpn-router-proxy-client.key" }}
+  ca.crt: {{ pki "openvpn-ca.crt" }}
+`)
+
+func routerProxyRouterProxyVpnclientSecretYamlBytes() ([]byte, error) {
+	return _routerProxyRouterProxyVpnclientSecretYaml, nil
+}
+
+func routerProxyRouterProxyVpnclientSecretYaml() (*asset, error) {
+	bytes, err := routerProxyRouterProxyVpnclientSecretYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "router-proxy/router-proxy-vpnclient-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _userManifestsBootstrapperUserManifestTemplateYaml = []byte(`kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -4595,6 +4909,14 @@ var _bindata = map[string]func() (*asset, error){
 	"openvpn/server.conf":                                                             openvpnServerConf,
 	"openvpn/worker":                                                                  openvpnWorker,
 	"registry/cluster-imageregistry-config.yaml":                                      registryClusterImageregistryConfigYaml,
+	"router-proxy/client.conf":                                                        routerProxyClientConf,
+	"router-proxy/haproxy.cfg":                                                        routerProxyHaproxyCfg,
+	"router-proxy/router-proxy-configmap.yaml":                                        routerProxyRouterProxyConfigmapYaml,
+	"router-proxy/router-proxy-deployment.yaml":                                       routerProxyRouterProxyDeploymentYaml,
+	"router-proxy/router-proxy-http-service.yaml":                                     routerProxyRouterProxyHttpServiceYaml,
+	"router-proxy/router-proxy-https-service.yaml":                                    routerProxyRouterProxyHttpsServiceYaml,
+	"router-proxy/router-proxy-vpnclient-configmap.yaml":                              routerProxyRouterProxyVpnclientConfigmapYaml,
+	"router-proxy/router-proxy-vpnclient-secret.yaml":                                 routerProxyRouterProxyVpnclientSecretYaml,
 	"user-manifests-bootstrapper/user-manifest-template.yaml":                         userManifestsBootstrapperUserManifestTemplateYaml,
 	"user-manifests-bootstrapper/user-manifests-bootstrapper-pod.yaml":                userManifestsBootstrapperUserManifestsBootstrapperPodYaml,
 }
@@ -4786,6 +5108,16 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	}},
 	"registry": {nil, map[string]*bintree{
 		"cluster-imageregistry-config.yaml": {registryClusterImageregistryConfigYaml, map[string]*bintree{}},
+	}},
+	"router-proxy": {nil, map[string]*bintree{
+		"client.conf":                           {routerProxyClientConf, map[string]*bintree{}},
+		"haproxy.cfg":                           {routerProxyHaproxyCfg, map[string]*bintree{}},
+		"router-proxy-configmap.yaml":           {routerProxyRouterProxyConfigmapYaml, map[string]*bintree{}},
+		"router-proxy-deployment.yaml":          {routerProxyRouterProxyDeploymentYaml, map[string]*bintree{}},
+		"router-proxy-http-service.yaml":        {routerProxyRouterProxyHttpServiceYaml, map[string]*bintree{}},
+		"router-proxy-https-service.yaml":       {routerProxyRouterProxyHttpsServiceYaml, map[string]*bintree{}},
+		"router-proxy-vpnclient-configmap.yaml": {routerProxyRouterProxyVpnclientConfigmapYaml, map[string]*bintree{}},
+		"router-proxy-vpnclient-secret.yaml":    {routerProxyRouterProxyVpnclientSecretYaml, map[string]*bintree{}},
 	}},
 	"user-manifests-bootstrapper": {nil, map[string]*bintree{
 		"user-manifest-template.yaml":          {userManifestsBootstrapperUserManifestTemplateYaml, map[string]*bintree{}},

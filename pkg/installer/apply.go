@@ -1,4 +1,4 @@
-package aws
+package installer
 
 import (
 	"bytes"

@@ -1,4 +1,4 @@
-package aws
+package installer
 
 import (
 	crand "crypto/rand"
@@ -47,8 +47,6 @@ import (
 )
 
 const (
-	routerNodePortHTTP    = 31080
-	routerNodePortHTTPS   = 31443
 	externalOauthPort     = 8443
 	workerMachineSetCount = 3
 
@@ -104,11 +102,6 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	if err != nil {
 		return fmt.Errorf("failed to obtain a kubernetes client from existing configuration: %v", err)
 	}
-	awsKey, awsSecretKey, err := getAWSCredentials(client)
-	if err != nil {
-		return fmt.Errorf("failed to obtain AWS credentials from host cluster: %v", err)
-	}
-	log.Debugf("AWS key: %s, secret: %s", awsKey, awsSecretKey)
 
 	if releaseImage == "" {
 		releaseImage, err = getReleaseImage(dynamicClient)
@@ -123,12 +116,11 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	}
 	log.Debugf("The pull secret is: %v", pullSecret)
 
-	infraName, region, err := getInfrastructureInfo(dynamicClient)
+	infraName, platformType, err := getInfrastructureInfo(dynamicClient)
 	if err != nil {
 		return fmt.Errorf("failed to obtain infrastructure info for cluster: %v", err)
 	}
 	log.Debugf("The management cluster infra name is: %s", infraName)
-	log.Debugf("The management cluster AWS region is: %s", region)
 
 	serviceCIDR, podCIDR, err := getNetworkInfo(dynamicClient)
 	if err != nil {
@@ -140,11 +132,6 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 		return fmt.Errorf("failed to obtain public zone information: %v", err)
 	}
 	log.Debugf("Using public DNS Zone: %s and parent suffix: %s", dnsZoneID, parentDomain)
-
-	machineNames, err := getMachineNames(dynamicClient)
-	if err != nil {
-		return fmt.Errorf("failed to fetch machine names for cluster: %v", err)
-	}
 
 	// Start creating resources on management cluster
 	_, err = client.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
@@ -201,70 +188,6 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 		log.WithError(err).Error("error creating Service for OAuth")
 		return err
 	}
-
-	// Fetch AWS cloud data
-	aws, err := NewAWSHelper(awsKey, awsSecretKey, region, infraName)
-	if err != nil {
-		return fmt.Errorf("cannot create an AWS client: %v", err)
-	}
-
-	lbInfo, err := aws.LoadBalancerInfo(machineNames)
-	if err != nil {
-		return fmt.Errorf("cannot get load balancer info: %v", err)
-	}
-	log.Infof("Using VPC: %s, Zone: %s, Subnet: %s", lbInfo.VPC, lbInfo.Zone, lbInfo.Subnet)
-
-	machineID, machineIP, err := getMachineInfo(dynamicClient, machineNames, fmt.Sprintf("%s-worker-%s", infraName, lbInfo.Zone))
-	if err != nil {
-		return fmt.Errorf("cannot get machine info: %v", err)
-	}
-	log.Infof("Using management machine with ID: %s and IP: %s", machineID, machineIP)
-
-	routerLBName := generateLBResourceName(infraName, name, "apps")
-	routerLBARN, routerLBDNS, err := aws.EnsureNLB(routerLBName, lbInfo.Subnet, "")
-	if err != nil {
-		return fmt.Errorf("cannot create router load balancer: %v", err)
-	}
-	log.Infof("Created router load balancer with ARN: %s, DNS: %s", routerLBARN, routerLBDNS)
-
-	routerHTTPTGName := generateLBResourceName(infraName, name, "http")
-	routerHTTPARN, err := aws.EnsureTargetGroup(lbInfo.VPC, routerHTTPTGName, routerNodePortHTTP)
-	if err != nil {
-		return fmt.Errorf("cannot create router HTTP target group: %v", err)
-	}
-	log.Infof("Created router HTTP target group ARN: %s", routerHTTPARN)
-
-	err = aws.EnsureListener(routerLBARN, routerHTTPARN, 80)
-	if err != nil {
-		return fmt.Errorf("cannot create router HTTP listener: %v", err)
-	}
-	log.Infof("Created router HTTP load balancer listener")
-
-	routerHTTPSTGName := generateLBResourceName(infraName, name, "https")
-	routerHTTPSARN, err := aws.EnsureTargetGroup(lbInfo.VPC, routerHTTPSTGName, routerNodePortHTTPS)
-	if err != nil {
-		return fmt.Errorf("cannot create router HTTPS target group: %v", err)
-	}
-	log.Infof("Created router HTTPS target group ARN: %s", routerHTTPSARN)
-
-	err = aws.EnsureListener(routerLBARN, routerHTTPSARN, 443)
-	if err != nil {
-		return fmt.Errorf("cannot create router HTTPS listener: %v", err)
-	}
-	log.Infof("Created router HTTPS load balancer listener")
-
-	routerDNSName := fmt.Sprintf("*.apps.%s.%s", name, parentDomain)
-	err = aws.EnsureCNameRecord(dnsZoneID, routerDNSName, routerLBDNS)
-	if err != nil {
-		return fmt.Errorf("cannot create router DNS record: %v", err)
-	}
-	log.Infof("Created DNS record for router name: %s", routerDNSName)
-
-	err = aws.EnsureWorkersAllowNodePortAccess()
-	if err != nil {
-		return fmt.Errorf("cannot setup security group for worker nodes: %v", err)
-	}
-	log.Infof("Ensured that node ports on workers are accessible")
 
 	_, serviceCIDRNet, err := net.ParseCIDR(serviceCIDR)
 	if err != nil {
@@ -323,14 +246,11 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	params.IngressSubdomain = fmt.Sprintf("apps.%s.%s", name, parentDomain)
 	params.OpenShiftAPIClusterIP = openshiftClusterIP
 	params.BaseDomain = fmt.Sprintf("%s.%s", name, parentDomain)
-	params.CloudProvider = "AWS"
+	params.CloudProvider = platformType
 	params.InternalAPIPort = 6443
 	params.EtcdClientName = "etcd-client"
 	params.NetworkType = "OpenShiftSDN"
 	params.ImageRegistryHTTPSecret = generateImageRegistrySecret()
-	params.RouterNodePortHTTP = fmt.Sprintf("%d", routerNodePortHTTP)
-	params.RouterNodePortHTTPS = fmt.Sprintf("%d", routerNodePortHTTPS)
-	params.RouterServiceType = "NodePort"
 	params.Replicas = "1"
 	cpOperatorImage := os.Getenv("CONTROL_PLANE_OPERATOR_IMAGE_OVERRIDE")
 	if cpOperatorImage == "" {
@@ -387,13 +307,8 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 		return fmt.Errorf("failed to render manifests for cluster: %v", err)
 	}
 
-	// Create a nodeport service for the router
-	if err = generateRouterService(filepath.Join(manifestsDir, "router-service.json")); err != nil {
-		return fmt.Errorf("failed to generate router service: %v", err)
-	}
-
 	// Create a machineset for the new cluster's worker nodes
-	if err = generateWorkerMachineset(dynamicClient, infraName, lbInfo.Zone, name, routerLBName, filepath.Join(manifestsDir, "machineset.json")); err != nil {
+	if err = generateWorkerMachineset(dynamicClient, infraName, name, filepath.Join(manifestsDir, "machineset.json")); err != nil {
 		return fmt.Errorf("failed to generate worker machineset: %v", err)
 	}
 	if err = generateUserDataSecret(name, hyperHostDomain, filepath.Join(manifestsDir, "machine-user-data.json")); err != nil {
@@ -688,88 +603,6 @@ func getPullSecret(client kubeclient.Interface) (string, error) {
 	return string(pullSecret), nil
 }
 
-func getAWSCredentials(client kubeclient.Interface) (string, string, error) {
-
-	secret, err := client.CoreV1().Secrets("kube-system").Get("aws-creds", metav1.GetOptions{})
-	if err != nil {
-		return "", "", err
-	}
-	key, ok := secret.Data["aws_access_key_id"]
-	if !ok {
-		return "", "", fmt.Errorf("did not find an AWS access key")
-	}
-	secretKey, ok := secret.Data["aws_secret_access_key"]
-	if !ok {
-		return "", "", fmt.Errorf("did not find an AWS secret access key")
-	}
-	return string(key), string(secretKey), nil
-}
-
-func getMachineNames(client dynamic.Interface) ([]string, error) {
-	machineGroupVersion, err := schema.ParseGroupVersion("machine.openshift.io/v1beta1")
-	if err != nil {
-		return nil, err
-	}
-	machineGroupVersionResource := machineGroupVersion.WithResource("machines")
-	list, err := client.Resource(machineGroupVersionResource).Namespace("openshift-machine-api").List(metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	names := []string{}
-	for _, m := range list.Items {
-		names = append(names, m.GetName())
-	}
-	return names, nil
-}
-
-func getMachineInfo(client dynamic.Interface, machineNames []string, prefix string) (string, string, error) {
-	name := ""
-	for _, machineName := range machineNames {
-		if strings.HasPrefix(machineName, prefix) {
-			name = machineName
-			break
-		}
-	}
-	if name == "" {
-		return "", "", fmt.Errorf("did not find machine with prefix %s", prefix)
-	}
-	machineGroupVersion, err := schema.ParseGroupVersion("machine.openshift.io/v1beta1")
-	if err != nil {
-		return "", "", err
-	}
-	machineGroupVersionResource := machineGroupVersion.WithResource("machines")
-	machine, err := client.Resource(machineGroupVersionResource).Namespace("openshift-machine-api").Get(name, metav1.GetOptions{})
-	if err != nil {
-		return "", "", err
-	}
-	instanceID, exists, err := unstructured.NestedString(machine.Object, "status", "providerStatus", "instanceId")
-	if !exists || err != nil {
-		return "", "", fmt.Errorf("did not find instanceId on machine object: %v", err)
-	}
-	addresses, exists, err := unstructured.NestedSlice(machine.Object, "status", "addresses")
-	if !exists || err != nil {
-		return "", "", fmt.Errorf("did not find addresses on machine object: %v", err)
-	}
-	machineIP := ""
-	for _, addr := range addresses {
-		addrType, _, err := unstructured.NestedString(addr.(map[string]interface{}), "type")
-		if err != nil {
-			return "", "", fmt.Errorf("cannot get address type: %v", err)
-		}
-		if addrType != "InternalIP" {
-			continue
-		}
-		machineIP, _, err = unstructured.NestedString(addr.(map[string]interface{}), "address")
-		if err != nil {
-			return "", "", fmt.Errorf("cannot get machine address: %v", err)
-		}
-	}
-	if machineIP == "" {
-		return "", "", fmt.Errorf("could not find machine internal IP")
-	}
-	return instanceID, machineIP, nil
-}
-
 func getSSHPublicKey(client dynamic.Interface) ([]byte, error) {
 	machineConfigGroupVersion, err := schema.ParseGroupVersion("machineconfiguration.openshift.io/v1")
 	if err != nil {
@@ -806,12 +639,11 @@ func getInfrastructureInfo(client dynamic.Interface) (string, string, error) {
 	if !exists || err != nil {
 		return "", "", fmt.Errorf("could not find the infrastructure name in the infrastructure resource: %v", err)
 	}
-	region, exists, err := unstructured.NestedString(obj.Object, "status", "platformStatus", "aws", "region")
-	if !exists || err != nil {
-		return "", "", fmt.Errorf("could not find the AWS region in the infrastructure resource: %v", err)
+	platformType, _, err := unstructured.NestedString(obj.Object, "status", "platformType")
+	if err != nil {
+		return "", "", fmt.Errorf("could not obtain the platform type from the infrastructure resource: %v", err)
 	}
-
-	return infraName, region, nil
+	return infraName, platformType, nil
 }
 
 func getDNSZoneInfo(client dynamic.Interface) (string, string, string, error) {
@@ -899,16 +731,20 @@ func getNetworkInfo(client dynamic.Interface) (string, string, error) {
 	return serviceCIDR, podCIDR, nil
 }
 
-func generateWorkerMachineset(client dynamic.Interface, infraName, zone, namespace, lbName, fileName string) error {
+func generateWorkerMachineset(client dynamic.Interface, infraName, namespace, fileName string) error {
 	machineGV, err := schema.ParseGroupVersion("machine.openshift.io/v1beta1")
 	if err != nil {
 		return err
 	}
 	machineSetGVR := machineGV.WithResource("machinesets")
-	obj, err := client.Resource(machineSetGVR).Namespace("openshift-machine-api").Get(fmt.Sprintf("%s-worker-%s", infraName, zone), metav1.GetOptions{})
+	machineSets, err := client.Resource(machineSetGVR).Namespace("openshift-machine-api").List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
+	if len(machineSets.Items) == 0 {
+		return fmt.Errorf("no machinesets found")
+	}
+	obj := machineSets.Items[0]
 
 	workerName := generateMachineSetName(infraName, namespace, "worker")
 	object := obj.Object
@@ -926,12 +762,6 @@ func generateWorkerMachineset(client dynamic.Interface, infraName, zone, namespa
 	unstructured.SetNestedField(object, workerName, "spec", "selector", "matchLabels", "machine.openshift.io/cluster-api-machineset")
 	unstructured.SetNestedField(object, workerName, "spec", "template", "metadata", "labels", "machine.openshift.io/cluster-api-machineset")
 	unstructured.SetNestedField(object, fmt.Sprintf("%s-user-data", namespace), "spec", "template", "spec", "providerSpec", "value", "userDataSecret", "name")
-	loadBalancer := map[string]interface{}{}
-	unstructured.SetNestedField(loadBalancer, lbName, "name")
-	unstructured.SetNestedField(loadBalancer, "network", "type")
-	loadBalancers := []interface{}{loadBalancer}
-	unstructured.SetNestedSlice(object, loadBalancers, "spec", "template", "spec", "providerSpec", "value", "loadBalancers")
-
 	machineSetBytes, err := json.Marshal(object)
 	if err != nil {
 		return err
@@ -1030,55 +860,6 @@ func generateKubeadminPasswordTargetSecret(password string, fileName string) err
 	configMap.Kind = "ConfigMap"
 	configMap.Name = "user-manifest-kubeadmin-password"
 	configMap.Data = map[string]string{"data": string(secretBytes)}
-	configMapBytes, err := runtime.Encode(coreCodecs.LegacyCodec(corev1.SchemeGroupVersion), configMap)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(fileName, configMapBytes, 0644)
-}
-
-func generateRouterService(fileName string) error {
-	svc := &corev1.Service{}
-	svc.APIVersion = "v1"
-	svc.Kind = "Service"
-	svc.Name = "router-default"
-	svc.Namespace = "openshift-ingress"
-	svc.Labels = map[string]string{
-		"app":    "router",
-		"router": "router-default",
-	}
-	svc.Spec.Ports = []corev1.ServicePort{
-		{
-			Name:       "http",
-			NodePort:   routerNodePortHTTP,
-			Port:       80,
-			Protocol:   corev1.ProtocolTCP,
-			TargetPort: intstr.FromString("http"),
-		},
-		{
-			Name:       "https",
-			NodePort:   routerNodePortHTTPS,
-			Port:       443,
-			Protocol:   corev1.ProtocolTCP,
-			TargetPort: intstr.FromString("https"),
-		},
-	}
-	svc.Spec.Selector = map[string]string{
-		"ingresscontroller.operator.openshift.io/deployment-ingresscontroller": "default",
-	}
-	svc.Spec.SessionAffinity = corev1.ServiceAffinityNone
-	svc.Spec.Type = corev1.ServiceTypeNodePort
-
-	svcBytes, err := runtime.Encode(coreCodecs.LegacyCodec(corev1.SchemeGroupVersion), svc)
-	if err != nil {
-		return err
-	}
-
-	configMap := &corev1.ConfigMap{}
-	configMap.APIVersion = "v1"
-	configMap.Kind = "ConfigMap"
-	configMap.Name = "user-manifest-router-service"
-	configMap.Data = map[string]string{"data": string(svcBytes)}
 	configMapBytes, err := runtime.Encode(coreCodecs.LegacyCodec(corev1.SchemeGroupVersion), configMap)
 	if err != nil {
 		return err

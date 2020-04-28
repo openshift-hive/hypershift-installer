@@ -4,8 +4,6 @@ metadata:
   name: default
   namespace: openshift-ingress-operator
 spec:
-  nodePlacement:
-    tolerations:
-    - key: dedicated
-      value: edge
+  endpointPublishingStrategy:
+    type: Private
 status: {}
