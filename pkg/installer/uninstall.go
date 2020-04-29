@@ -80,5 +80,9 @@ func removeWorkerMachineset(client dynamic.Interface, infraName, namespace strin
 }
 
 func removeIngressController(client operatorclient.Interface, name string) error {
-	return client.OperatorV1().IngressControllers(ingressOperatorNamespace).Delete(name, &metav1.DeleteOptions{})
+	err := client.OperatorV1().IngressControllers(ingressOperatorNamespace).Delete(name, &metav1.DeleteOptions{})
+	if err == nil || errors.IsNotFound(err) {
+		return nil
+	}
+	return err
 }
