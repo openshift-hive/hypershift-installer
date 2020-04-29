@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	kubeclient "k8s.io/client-go/kubernetes"
+
+	operatorclient "github.com/openshift/client-go/operator/clientset/versioned"
 )
 
 func UninstallCluster(name string) error {
@@ -44,6 +46,14 @@ func UninstallCluster(name string) error {
 	if err = removeWorkerMachineset(dynamicClient, infraName, name); err != nil {
 		return fmt.Errorf("failed to remove worker machineset: %v", err)
 	}
+	log.Infof("Removing ingress controller")
+	operatorClient, err := operatorclient.NewForConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to get an operator client: %v", err)
+	}
+	if err = removeIngressController(operatorClient, name); err != nil {
+		return fmt.Errorf("failed to delete ingress controller %s: %v", name, err)
+	}
 
 	log.Info("Removing cluster namespace")
 	if err = client.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{}); err != nil {
@@ -67,4 +77,8 @@ func removeWorkerMachineset(client dynamic.Interface, infraName, namespace strin
 		return nil
 	}
 	return err
+}
+
+func removeIngressController(client operatorclient.Interface, name string) error {
+	return client.OperatorV1().IngressControllers(ingressOperatorNamespace).Delete(name, &metav1.DeleteOptions{})
 }

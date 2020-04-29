@@ -38,6 +38,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/retry"
 
+	operatorv1 "github.com/openshift/api/operator/v1"
+	operatorclient "github.com/openshift/client-go/operator/clientset/versioned"
+
 	"github.com/openshift-hive/hypershift-installer/pkg/api"
 	"github.com/openshift-hive/hypershift-installer/pkg/ignition"
 	"github.com/openshift-hive/hypershift-installer/pkg/pki"
@@ -57,6 +60,8 @@ const (
 	kubeAPIServerServiceName = "kube-apiserver"
 	oauthServiceName         = "oauth-openshift"
 	vpnServiceName           = "openvpn-server"
+	ingressOperatorNamespace = "openshift-ingress-operator"
+	hypershiftRouteLabel     = "hypershift.openshift.io/cluster"
 )
 
 var (
@@ -187,6 +192,12 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	if err := createOauthService(client, name); err != nil {
 		log.WithError(err).Error("error creating Service for OAuth")
 		return err
+	}
+
+	log.Info("Creating router shard")
+	operatorClient, err := operatorclient.NewForConfig(cfg)
+	if err := createIngressController(operatorClient, name, parentDomain); err != nil {
+		return fmt.Errorf("cannot create router shard: %v", err)
 	}
 
 	_, serviceCIDRNet, err := net.ParseCIDR(serviceCIDR)
@@ -910,6 +921,71 @@ func updateOAuthDeployment(client kubeclient.Interface, namespace string) error 
 	d.Spec.Template.ObjectMeta.Annotations = annotations
 	_, err = client.AppsV1().Deployments(namespace).Update(d)
 	return err
+}
+
+func createIngressController(client operatorclient.Interface, name string, parentDomain string) error {
+	// First ensure that the default ingress controller doesn't use routes generated for hypershift clusters
+	err := ensureDefaultIngressControllerSelector(client)
+	if err != nil {
+		return err
+	}
+	_, err = client.OperatorV1().IngressControllers(ingressOperatorNamespace).Get(name, metav1.GetOptions{})
+	if err == nil {
+		client.OperatorV1().IngressControllers(ingressOperatorNamespace).Delete(name, &metav1.DeleteOptions{})
+
+	}
+	if !errors.IsNotFound(err) {
+		return fmt.Errorf("unexpected error fetching existing ingress controller: %v", err)
+	}
+	ic := &operatorv1.IngressController{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ingressOperatorNamespace,
+		},
+		Spec: operatorv1.IngressControllerSpec{
+			Domain: fmt.Sprintf("apps.%s.%s", name, parentDomain),
+			RouteSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					hypershiftRouteLabel: name,
+				},
+			},
+		},
+	}
+	_, err = client.OperatorV1().IngressControllers(ingressOperatorNamespace).Create(ic)
+	if err != nil {
+		return fmt.Errorf("failed to create ingress controller for %s: %v", name, err)
+	}
+	return nil
+}
+
+func ensureDefaultIngressControllerSelector(client operatorclient.Interface) error {
+	defaultIC, err := client.OperatorV1().IngressControllers(ingressOperatorNamespace).Get("default", metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("cannot fetch default ingress controller: %v", err)
+	}
+	routeSelector := defaultIC.Spec.RouteSelector
+	if routeSelector == nil {
+		routeSelector = &metav1.LabelSelector{}
+	}
+	found := false
+	for _, exp := range routeSelector.MatchExpressions {
+		if exp.Key == hypershiftRouteLabel && exp.Operator == metav1.LabelSelectorOpDoesNotExist {
+			found = true
+			break
+		}
+	}
+	if !found {
+		routeSelector.MatchExpressions = append(routeSelector.MatchExpressions, metav1.LabelSelectorRequirement{
+			Key:      hypershiftRouteLabel,
+			Operator: metav1.LabelSelectorOpDoesNotExist,
+		})
+		defaultIC.Spec.RouteSelector = routeSelector
+		_, err = client.OperatorV1().IngressControllers(ingressOperatorNamespace).Update(defaultIC)
+		if err != nil {
+			return fmt.Errorf("cannot update default ingress controller: %v", err)
+		}
+	}
+	return nil
 }
 
 func generateImageRegistrySecret() string {

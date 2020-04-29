@@ -417,6 +417,8 @@ github.com/openshift/api v0.0.0-20200116145750-0e2ff1e215dd/go.mod h1:fT6U/JfG8u
 github.com/openshift/api v0.0.0-20200127192224-ffde1bfabb9f/go.mod h1:fT6U/JfG8uZzemTRwZA2kBDJP5nWz7v05UHnty/D+pk=
 github.com/openshift/api v0.0.0-20200330134433-8e259f67fc55 h1:PbIRNLKSDnc+P0XT67emLMAItK41ntNYs5K8OUtJQ6U=
 github.com/openshift/api v0.0.0-20200330134433-8e259f67fc55/go.mod h1:RKMJ5CBnljLfnej+BJ/xnOWc3kZDvJUaIAEq2oKSPtE=
+github.com/openshift/api v0.0.0-20200414152312-3e8f22fb0b56 h1:6svnLQpAqY5w2TKjIyDKFC/JUaQcsDLSRqc8xXxxBW8=
+github.com/openshift/api v0.0.0-20200414152312-3e8f22fb0b56/go.mod h1:fT6U/JfG8uZzemTRwZA2kBDJP5nWz7v05UHnty/D+pk=
 github.com/openshift/build-machinery-go v0.0.0-20200211121458-5e3d6e570160/go.mod h1:1CkcsT3aVebzRBzVTSbiKSkJMsC/CASqxesfqEMfJEc=
 github.com/openshift/client-go v0.0.0-20190813201236-5a5508328169/go.mod h1:6rzn+JTr7+WYS2E1TExP4gByoABxMznR6y2SnUIkmxk=
 github.com/openshift/client-go v0.0.0-20200116152001-92a2713fa240 h1:XYfJWv2Ch+qInGLDEedHRtDsJwnxyU1L8U7SY56NcA8=

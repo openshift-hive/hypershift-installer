@@ -34,10 +34,11 @@ go 1.13
 require (
 	github.com/Luzifer/go-dhparam v1.0.0
 	github.com/apparentlymart/go-cidr v1.0.1
-	github.com/aws/aws-sdk-go v1.30.0
+	github.com/aws/aws-sdk-go v1.30.0 // indirect
 	github.com/coreos/ignition v0.34.0
 	github.com/google/uuid v1.1.1
-	github.com/openshift/api v0.0.0-20200330134433-8e259f67fc55
+	github.com/openshift/api v0.0.0-20200414152312-3e8f22fb0b56
+	github.com/openshift/build-machinery-go v0.0.0-20200211121458-5e3d6e570160 // indirect
 	github.com/openshift/client-go v0.0.0-20200116152001-92a2713fa240
 	github.com/openshift/hypershift-toolkit v0.0.0-20200328003509-09ef0f45e8ae // indirect
 	github.com/openshift/oc v0.0.0-00010101000000-000000000000
@@ -50,5 +51,6 @@ require (
 	k8s.io/apimachinery v0.18.0
 	k8s.io/cli-runtime v0.0.0
 	k8s.io/client-go v0.17.1
+	k8s.io/code-generator v0.18.0 // indirect
 	k8s.io/kubectl v0.0.0
 )
