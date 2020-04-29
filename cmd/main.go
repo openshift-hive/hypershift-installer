@@ -4,7 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/openshift-hive/hypershift-installer/pkg/aws"
+	"github.com/openshift-hive/hypershift-installer/pkg/installer"
 )
 
 var (
@@ -60,7 +60,7 @@ func newInstallCommand() *cobra.Command {
 				log.Fatalf("You must specify the name of the cluster you want to install")
 			}
 
-			if err := aws.InstallCluster(name, releaseImage, dhParamsFile, waitForClusterReady); err != nil {
+			if err := installer.InstallCluster(name, releaseImage, dhParamsFile, waitForClusterReady); err != nil {
 				log.WithError(err).Fatalf("Failed to install cluster")
 			}
 		},
@@ -81,7 +81,7 @@ func newUninstallCommand() *cobra.Command {
 				log.Fatalf("You must specify the name of the cluster you want to uninstall")
 			}
 			name := args[0]
-			if err := aws.UninstallCluster(name); err != nil {
+			if err := installer.UninstallCluster(name); err != nil {
 				log.WithError(err).Fatalf("Failed to uninstall cluster")
 			}
 		},

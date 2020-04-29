@@ -97,7 +97,7 @@ spec:
 {{ end }}
 {{ if includeVPN }}
       - name: openvpn-client
-        image: quay.io/sjenning/poc:openvpn
+        image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
         - /usr/sbin/openvpn

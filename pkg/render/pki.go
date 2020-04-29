@@ -41,6 +41,7 @@ func (c *pkiRenderContext) setupManifests(etcd bool, vpn bool, externalOauth boo
 	if vpn {
 		c.openVPN()
 	}
+	c.routerProxy()
 }
 
 func (c *pkiRenderContext) etcd() {
@@ -123,5 +124,11 @@ func (c *pkiRenderContext) openVPN() {
 func (c *pkiRenderContext) serviceAdminKubeconfig() {
 	c.addManifestFiles(
 		"common/service-network-admin-kubeconfig-secret.yaml",
+	)
+}
+
+func (c *pkiRenderContext) routerProxy() {
+	c.addManifestFiles(
+		"router-proxy/router-proxy-vpnclient-secret.yaml",
 	)
 }

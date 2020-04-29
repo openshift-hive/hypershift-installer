@@ -98,6 +98,7 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 				params.ExternalOAuthAddress,
 			}, nil),
 		cert("openvpn-kube-apiserver-client", "openvpn-ca", "kube-apiserver", "kubernetes", nil, nil),
+		cert("openvpn-router-proxy-client", "openvpn-ca", "router-proxy", "kubernetes", nil, nil),
 		cert("openvpn-worker-client", "openvpn-ca", "worker", "kubernetes", nil, nil),
 	}
 	caMap, err := generateCAs(cas)
