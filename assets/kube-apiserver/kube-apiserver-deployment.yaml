@@ -53,6 +53,12 @@ spec:
         args:
         - "--openshift-config=/etc/kubernetes/apiserver-config/config.yaml"
         workingDir: /var/log/kube-apiserver
+        securityContext:
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - MKNOD
+            - NET_ADMIN
         livenessProbe:
           httpGet:
             scheme: HTTPS
@@ -100,18 +106,30 @@ spec:
         image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /usr/sbin/openvpn
-        - --config
-        - /etc/openvpn/config/client.conf
+        - /bin/bash
+        args:
+        - -c
+        - |-
+          #!/bin/bash
+          set -e
+          mkdir -p /dev/net
+          mknod /dev/net/tun c 10 200
+          chmod 600 /dev/net/tun
+          exec /usr/sbin/openvpn --config /etc/openvpn/config/client.conf
         workingDir: /etc/openvpn/
         securityContext:
-          privileged: true
+          capabilities:
+            add:
+            - MKNOD
+            - NET_ADMIN
+          runAsUser: 0
         volumeMounts:
         - mountPath: /etc/openvpn/secret
           name: vpnsecret
         - mountPath: /etc/openvpn/config
           name: vpnconfig
 {{ end }}
+      serviceAccountName: vpn
       volumes:
       - secret:
           secretName: kube-apiserver

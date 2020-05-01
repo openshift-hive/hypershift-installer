@@ -16,7 +16,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: openvpn-client
-        image: quay.io/sjenning/poc:openvpn
+        image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
         - /bin/bash

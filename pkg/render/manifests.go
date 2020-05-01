@@ -196,6 +196,7 @@ func (c *clusterManifestContext) controlPlaneOperator() {
 
 func (c *clusterManifestContext) openVPN() {
 	c.addManifestFiles(
+		"openvpn/openvpn-serviceaccount.yaml",
 		"openvpn/openvpn-server-deployment.yaml",
 		"openvpn/openvpn-ccd-configmap.yaml",
 		"openvpn/openvpn-server-configmap.yaml",
