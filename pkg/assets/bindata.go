@@ -92,7 +92,9 @@
 // assets/openvpn/openvpn-server-deployment.yaml
 // assets/openvpn/openvpn-server-secret.yaml
 // assets/openvpn/openvpn-server-service.yaml
+// assets/openvpn/openvpn-serviceaccount.yaml
 // assets/openvpn/server.conf
+// assets/openvpn/vpn-scc.yaml
 // assets/openvpn/worker
 // assets/registry/cluster-imageregistry-config.yaml
 // assets/router-proxy/client.conf
@@ -1972,6 +1974,12 @@ spec:
         args:
         - "--openshift-config=/etc/kubernetes/apiserver-config/config.yaml"
         workingDir: /var/log/kube-apiserver
+        securityContext:
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - MKNOD
+            - NET_ADMIN
         livenessProbe:
           httpGet:
             scheme: HTTPS
@@ -2019,18 +2027,30 @@ spec:
         image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /usr/sbin/openvpn
-        - --config
-        - /etc/openvpn/config/client.conf
+        - /bin/bash
+        args:
+        - -c
+        - |-
+          #!/bin/bash
+          set -e
+          mkdir -p /dev/net
+          mknod /dev/net/tun c 10 200
+          chmod 600 /dev/net/tun
+          exec /usr/sbin/openvpn --config /etc/openvpn/config/client.conf
         workingDir: /etc/openvpn/
         securityContext:
-          privileged: true
+          capabilities:
+            add:
+            - MKNOD
+            - NET_ADMIN
+          runAsUser: 0
         volumeMounts:
         - mountPath: /etc/openvpn/secret
           name: vpnsecret
         - mountPath: /etc/openvpn/config
           name: vpnconfig
 {{ end }}
+      serviceAccountName: vpn
       volumes:
       - secret:
           secretName: kube-apiserver
@@ -3969,7 +3989,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: openvpn-client
-        image: quay.io/sjenning/poc:openvpn
+        image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
         - /bin/bash
@@ -4104,15 +4124,28 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: openvpn-server
-        image: quay.io/sjenning/poc:openvpn
+        image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /usr/sbin/openvpn
-        - --config
-        - /etc/openvpn/config/server.conf
+        - /bin/bash
+        args:
+        - -c
+        - |-
+          #!/bin/bash
+          set -e
+          mkdir -p /dev/net
+          if [[ ! -f /dev/net/tun ]]; then
+            mknod /dev/net/tun c 10 200
+          fi
+          chmod 600 /dev/net/tun
+          exec /usr/sbin/openvpn --config /etc/openvpn/config/server.conf
         workingDir: /etc/openvpn/server
         securityContext:
-          privileged: true
+          capabilities:
+            add:
+            - MKNOD
+            - NET_ADMIN
+          runAsUser: 0
 {{ if .OpenVPNServerResources }}
         resources:{{ range .OpenVPNServerResources }}{{ range .ResourceRequest }}
           requests: {{ if .CPU }}
@@ -4129,6 +4162,7 @@ spec:
           name: ccd
         - mountPath: /etc/openvpn/config
           name: config
+      serviceAccountName: vpn
       volumes:
       - secret:
           secretName: openvpn-server
@@ -4212,6 +4246,27 @@ func openvpnOpenvpnServerServiceYaml() (*asset, error) {
 	return a, nil
 }
 
+var _openvpnOpenvpnServiceaccountYaml = []byte(`kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: vpn
+`)
+
+func openvpnOpenvpnServiceaccountYamlBytes() ([]byte, error) {
+	return _openvpnOpenvpnServiceaccountYaml, nil
+}
+
+func openvpnOpenvpnServiceaccountYaml() (*asset, error) {
+	bytes, err := openvpnOpenvpnServiceaccountYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "openvpn/openvpn-serviceaccount.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _openvpnServerConf = []byte(`server 192.168.255.0 255.255.255.0
 verb 3
 ca ca.crt
@@ -4261,6 +4316,58 @@ func openvpnServerConf() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "openvpn/server.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _openvpnVpnSccYaml = []byte(`apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: hypershift-vpn
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: false
+allowedCapabilities:
+- MKNOD
+- NET_ADMIN
+defaultAddCapabilities: null
+fsGroup:
+  type: RunAsAny
+groups: []
+priority: 10
+readOnlyRootFilesystem: false
+requiredDropCapabilities: null
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+users: []
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret
+`)
+
+func openvpnVpnSccYamlBytes() ([]byte, error) {
+	return _openvpnVpnSccYaml, nil
+}
+
+func openvpnVpnSccYaml() (*asset, error) {
+	bytes, err := openvpnVpnSccYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "openvpn/vpn-scc.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4480,6 +4587,12 @@ spec:
           name: https
         - containerPort: 8080
           name: http
+        securityContext:
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - MKNOD
+            - NET_ADMIN
         volumeMounts:
         - name: config
           mountPath: /usr/local/etc/haproxy
@@ -4487,17 +4600,29 @@ spec:
         image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /usr/sbin/openvpn
-        - --config
-        - /etc/openvpn/config/client.conf
+        - /bin/bash
+        args:
+        - -c
+        - |-
+          #!/bin/bash
+          set -e
+          mkdir -p /dev/net
+          mknod /dev/net/tun c 10 200
+          chmod 600 /dev/net/tun
+          exec /usr/sbin/openvpn --config /etc/openvpn/config/client.conf
         workingDir: /etc/openvpn/
         securityContext:
-          privileged: true
+          capabilities:
+            add:
+            - MKNOD
+            - NET_ADMIN
+          runAsUser: 0
         volumeMounts:
         - mountPath: /etc/openvpn/secret
           name: vpnsecret
         - mountPath: /etc/openvpn/config
           name: vpnconfig
+      serviceAccountName: vpn
       volumes:
       - name: config-template
         configMap:
@@ -4919,7 +5044,9 @@ var _bindata = map[string]func() (*asset, error){
 	"openvpn/openvpn-server-deployment.yaml":                                          openvpnOpenvpnServerDeploymentYaml,
 	"openvpn/openvpn-server-secret.yaml":                                              openvpnOpenvpnServerSecretYaml,
 	"openvpn/openvpn-server-service.yaml":                                             openvpnOpenvpnServerServiceYaml,
+	"openvpn/openvpn-serviceaccount.yaml":                                             openvpnOpenvpnServiceaccountYaml,
 	"openvpn/server.conf":                                                             openvpnServerConf,
+	"openvpn/vpn-scc.yaml":                                                            openvpnVpnSccYaml,
 	"openvpn/worker":                                                                  openvpnWorker,
 	"registry/cluster-imageregistry-config.yaml":                                      registryClusterImageregistryConfigYaml,
 	"router-proxy/client.conf":                                                        routerProxyClientConf,
@@ -5116,7 +5243,9 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"openvpn-server-deployment.yaml": {openvpnOpenvpnServerDeploymentYaml, map[string]*bintree{}},
 		"openvpn-server-secret.yaml":     {openvpnOpenvpnServerSecretYaml, map[string]*bintree{}},
 		"openvpn-server-service.yaml":    {openvpnOpenvpnServerServiceYaml, map[string]*bintree{}},
+		"openvpn-serviceaccount.yaml":    {openvpnOpenvpnServiceaccountYaml, map[string]*bintree{}},
 		"server.conf":                    {openvpnServerConf, map[string]*bintree{}},
+		"vpn-scc.yaml":                   {openvpnVpnSccYaml, map[string]*bintree{}},
 		"worker":                         {openvpnWorker, map[string]*bintree{}},
 	}},
 	"registry": {nil, map[string]*bintree{

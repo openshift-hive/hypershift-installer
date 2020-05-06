@@ -54,6 +54,12 @@ spec:
           name: https
         - containerPort: 8080
           name: http
+        securityContext:
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - MKNOD
+            - NET_ADMIN
         volumeMounts:
         - name: config
           mountPath: /usr/local/etc/haproxy
@@ -61,17 +67,29 @@ spec:
         image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /usr/sbin/openvpn
-        - --config
-        - /etc/openvpn/config/client.conf
+        - /bin/bash
+        args:
+        - -c
+        - |-
+          #!/bin/bash
+          set -e
+          mkdir -p /dev/net
+          mknod /dev/net/tun c 10 200
+          chmod 600 /dev/net/tun
+          exec /usr/sbin/openvpn --config /etc/openvpn/config/client.conf
         workingDir: /etc/openvpn/
         securityContext:
-          privileged: true
+          capabilities:
+            add:
+            - MKNOD
+            - NET_ADMIN
+          runAsUser: 0
         volumeMounts:
         - mountPath: /etc/openvpn/secret
           name: vpnsecret
         - mountPath: /etc/openvpn/config
           name: vpnconfig
+      serviceAccountName: vpn
       volumes:
       - name: config-template
         configMap:

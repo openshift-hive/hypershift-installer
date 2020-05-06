@@ -41,6 +41,9 @@ import (
 	operatorv1 "github.com/openshift/api/operator/v1"
 	operatorclient "github.com/openshift/client-go/operator/clientset/versioned"
 
+	securityv1 "github.com/openshift/api/security/v1"
+	securityclient "github.com/openshift/client-go/security/clientset/versioned"
+
 	"github.com/openshift-hive/hypershift-installer/pkg/api"
 	"github.com/openshift-hive/hypershift-installer/pkg/ignition"
 	"github.com/openshift-hive/hypershift-installer/pkg/pki"
@@ -62,6 +65,7 @@ const (
 	vpnServiceName           = "openvpn-server"
 	ingressOperatorNamespace = "openshift-ingress-operator"
 	hypershiftRouteLabel     = "hypershift.openshift.io/cluster"
+	vpnServiceAccountName    = "vpn"
 )
 
 var (
@@ -76,6 +80,8 @@ var (
 	ignitionDeploymentBytes = assets.MustAsset("ignition-deployment.yaml")
 	ignitionServiceBytes    = assets.MustAsset("ignition-service.yaml")
 	ignitionRouteBytes      = assets.MustAsset("ignition-route.yaml")
+
+	vpnSCCBytes = assets.MustAsset("openvpn/vpn-scc.yaml")
 )
 
 func init() {
@@ -155,7 +161,11 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	}
 
 	// Ensure that we can run privileged pods
-	if err = ensurePrivilegedSCC(dynamicClient, name); err != nil {
+	securityClient, err := securityclient.NewForConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create security client: %v", err)
+	}
+	if err = ensureVPNSCC(securityClient, name); err != nil {
 		return fmt.Errorf("failed to ensure privileged SCC for the new namespace: %v", err)
 	}
 
@@ -817,37 +827,54 @@ func copyFile(src, dest string) error {
 	return err
 }
 
-func ensurePrivilegedSCC(client dynamic.Interface, namespace string) error {
-	securityGV, err := schema.ParseGroupVersion("security.openshift.io/v1")
+func createVPNSCC(securityClient securityclient.Interface) (*securityv1.SecurityContextConstraints, error) {
+	securityScheme := runtime.NewScheme()
+	securityCodecs := serializer.NewCodecFactory(securityScheme)
+	securityv1.AddToScheme(securityScheme)
+	obj, err := runtime.Decode(securityCodecs.UniversalDecoder(securityv1.SchemeGroupVersion), vpnSCCBytes)
 	if err != nil {
-		return err
+		panic(fmt.Sprintf("cannot decode static vpn scc: %v", err))
 	}
-	sccGVR := securityGV.WithResource("securitycontextconstraints")
-	obj, err := client.Resource(sccGVR).Get("privileged", metav1.GetOptions{})
+	var ok bool
+	scc, ok := obj.(*securityv1.SecurityContextConstraints)
+	if !ok {
+		panic(fmt.Sprintf("static vpn scc is not of the right type: %T", obj))
+	}
+	scc, err = securityClient.SecurityV1().SecurityContextConstraints().Create(scc)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return nil, fmt.Errorf("failed to create VPN scc: %v", err)
+	}
 	if err != nil {
-		return err
+		scc, err = securityClient.SecurityV1().SecurityContextConstraints().Get("hypershift-vpn", metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("cannot fetch hypershift-vpn scc: %v", err)
+		}
 	}
-	users, exists, err := unstructured.NestedStringSlice(obj.Object, "users")
-	if err != nil {
-		return err
-	}
-	userSet := sets.NewString()
-	if exists {
-		userSet.Insert(users...)
-	}
-	svcAccount := fmt.Sprintf("system:serviceaccount:%s:default", namespace)
-	if userSet.Has(svcAccount) {
-		// No need to update anything, service account already has privileged SCC
-		return nil
-	}
-	userSet.Insert(svcAccount)
+	return scc, nil
+}
 
-	if err = unstructured.SetNestedStringSlice(obj.Object, userSet.List(), "users"); err != nil {
-		return err
+func ensureVPNSCC(securityClient securityclient.Interface, namespace string) error {
+	scc, err := securityClient.SecurityV1().SecurityContextConstraints().Get("hypershift-vpn", metav1.GetOptions{})
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("error fetching vpn scc")
 	}
-
-	_, err = client.Resource(sccGVR).Update(obj, metav1.UpdateOptions{})
-	return err
+	if err != nil {
+		scc, err = createVPNSCC(securityClient)
+		if err != nil {
+			return err
+		}
+	}
+	userSet := sets.NewString(scc.Users...)
+	svcAccount := fmt.Sprintf("system:serviceaccount:%s:%s", namespace, vpnServiceAccountName)
+	if !userSet.Has(svcAccount) {
+		userSet.Insert(svcAccount)
+		scc.Users = userSet.List()
+		_, err = securityClient.SecurityV1().SecurityContextConstraints().Update(scc)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func generateKubeadminPasswordTargetSecret(password string, fileName string) error {
