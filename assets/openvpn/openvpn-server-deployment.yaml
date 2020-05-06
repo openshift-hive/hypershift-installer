@@ -22,25 +22,13 @@ spec:
         image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /bin/bash
+        - /usr/sbin/openvpn
         args:
-        - -c
-        - |-
-          #!/bin/bash
-          set -e
-          mkdir -p /dev/net
-          if [[ ! -f /dev/net/tun ]]; then
-            mknod /dev/net/tun c 10 200
-          fi
-          chmod 600 /dev/net/tun
-          exec /usr/sbin/openvpn --config /etc/openvpn/config/server.conf
+        - --config
+        - /etc/openvpn/config/server.conf
         workingDir: /etc/openvpn/server
         securityContext:
-          capabilities:
-            add:
-            - MKNOD
-            - NET_ADMIN
-          runAsUser: 0
+          privileged: true
 {{ if .OpenVPNServerResources }}
         resources:{{ range .OpenVPNServerResources }}{{ range .ResourceRequest }}
           requests: {{ if .CPU }}

@@ -94,7 +94,6 @@
 // assets/openvpn/openvpn-server-service.yaml
 // assets/openvpn/openvpn-serviceaccount.yaml
 // assets/openvpn/server.conf
-// assets/openvpn/vpn-scc.yaml
 // assets/openvpn/worker
 // assets/registry/cluster-imageregistry-config.yaml
 // assets/router-proxy/client.conf
@@ -2027,23 +2026,13 @@ spec:
         image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /bin/bash
+        - /usr/sbin/openvpn
         args:
-        - -c
-        - |-
-          #!/bin/bash
-          set -e
-          mkdir -p /dev/net
-          mknod /dev/net/tun c 10 200
-          chmod 600 /dev/net/tun
-          exec /usr/sbin/openvpn --config /etc/openvpn/config/client.conf
+        - --config
+        - /etc/openvpn/config/client.conf
         workingDir: /etc/openvpn/
         securityContext:
-          capabilities:
-            add:
-            - MKNOD
-            - NET_ADMIN
-          runAsUser: 0
+          privileged: true
         volumeMounts:
         - mountPath: /etc/openvpn/secret
           name: vpnsecret
@@ -4127,25 +4116,13 @@ spec:
         image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /bin/bash
+        - /usr/sbin/openvpn
         args:
-        - -c
-        - |-
-          #!/bin/bash
-          set -e
-          mkdir -p /dev/net
-          if [[ ! -f /dev/net/tun ]]; then
-            mknod /dev/net/tun c 10 200
-          fi
-          chmod 600 /dev/net/tun
-          exec /usr/sbin/openvpn --config /etc/openvpn/config/server.conf
+        - --config
+        - /etc/openvpn/config/server.conf
         workingDir: /etc/openvpn/server
         securityContext:
-          capabilities:
-            add:
-            - MKNOD
-            - NET_ADMIN
-          runAsUser: 0
+          privileged: true
 {{ if .OpenVPNServerResources }}
         resources:{{ range .OpenVPNServerResources }}{{ range .ResourceRequest }}
           requests: {{ if .CPU }}
@@ -4316,58 +4293,6 @@ func openvpnServerConf() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "openvpn/server.conf", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _openvpnVpnSccYaml = []byte(`apiVersion: security.openshift.io/v1
-kind: SecurityContextConstraints
-metadata:
-  name: hypershift-vpn
-allowHostDirVolumePlugin: false
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: true
-allowPrivilegedContainer: false
-allowedCapabilities:
-- MKNOD
-- NET_ADMIN
-defaultAddCapabilities: null
-fsGroup:
-  type: RunAsAny
-groups: []
-priority: 10
-readOnlyRootFilesystem: false
-requiredDropCapabilities: null
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: MustRunAs
-supplementalGroups:
-  type: RunAsAny
-users: []
-volumes:
-- configMap
-- downwardAPI
-- emptyDir
-- persistentVolumeClaim
-- projected
-- secret
-`)
-
-func openvpnVpnSccYamlBytes() ([]byte, error) {
-	return _openvpnVpnSccYaml, nil
-}
-
-func openvpnVpnSccYaml() (*asset, error) {
-	bytes, err := openvpnVpnSccYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "openvpn/vpn-scc.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -4600,23 +4525,13 @@ spec:
         image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /bin/bash
+        - /usr/sbin/openvpn
         args:
-        - -c
-        - |-
-          #!/bin/bash
-          set -e
-          mkdir -p /dev/net
-          mknod /dev/net/tun c 10 200
-          chmod 600 /dev/net/tun
-          exec /usr/sbin/openvpn --config /etc/openvpn/config/client.conf
+        - --config
+        - /etc/openvpn/config/client.conf
         workingDir: /etc/openvpn/
         securityContext:
-          capabilities:
-            add:
-            - MKNOD
-            - NET_ADMIN
-          runAsUser: 0
+          privileged: true
         volumeMounts:
         - mountPath: /etc/openvpn/secret
           name: vpnsecret
@@ -5046,7 +4961,6 @@ var _bindata = map[string]func() (*asset, error){
 	"openvpn/openvpn-server-service.yaml":                                             openvpnOpenvpnServerServiceYaml,
 	"openvpn/openvpn-serviceaccount.yaml":                                             openvpnOpenvpnServiceaccountYaml,
 	"openvpn/server.conf":                                                             openvpnServerConf,
-	"openvpn/vpn-scc.yaml":                                                            openvpnVpnSccYaml,
 	"openvpn/worker":                                                                  openvpnWorker,
 	"registry/cluster-imageregistry-config.yaml":                                      registryClusterImageregistryConfigYaml,
 	"router-proxy/client.conf":                                                        routerProxyClientConf,
@@ -5245,7 +5159,6 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"openvpn-server-service.yaml":    {openvpnOpenvpnServerServiceYaml, map[string]*bintree{}},
 		"openvpn-serviceaccount.yaml":    {openvpnOpenvpnServiceaccountYaml, map[string]*bintree{}},
 		"server.conf":                    {openvpnServerConf, map[string]*bintree{}},
-		"vpn-scc.yaml":                   {openvpnVpnSccYaml, map[string]*bintree{}},
 		"worker":                         {openvpnWorker, map[string]*bintree{}},
 	}},
 	"registry": {nil, map[string]*bintree{
