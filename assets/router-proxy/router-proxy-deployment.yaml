@@ -67,23 +67,13 @@ spec:
         image: quay.io/hypershift/openvpn:latest
         imagePullPolicy: Always
         command:
-        - /bin/bash
+        - /usr/sbin/openvpn
         args:
-        - -c
-        - |-
-          #!/bin/bash
-          set -e
-          mkdir -p /dev/net
-          mknod /dev/net/tun c 10 200
-          chmod 600 /dev/net/tun
-          exec /usr/sbin/openvpn --config /etc/openvpn/config/client.conf
+        - --config
+        - /etc/openvpn/config/client.conf
         workingDir: /etc/openvpn/
         securityContext:
-          capabilities:
-            add:
-            - MKNOD
-            - NET_ADMIN
-          runAsUser: 0
+          privileged: true
         volumeMounts:
         - mountPath: /etc/openvpn/secret
           name: vpnsecret
