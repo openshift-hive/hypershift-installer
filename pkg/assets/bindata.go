@@ -1502,8 +1502,8 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash /usr/local/bin/setup-apiserver-ip.sh
-ExecStop=/bin/bash /usr/local/bin/teardown-apiserver-ip.sh
+ExecStart=/usr/local/bin/setup-apiserver-ip.sh
+ExecStop=/usr/local/bin/teardown-apiserver-ip.sh
 RemainAfterExit=yes
 
 [Install]
