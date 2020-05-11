@@ -87,7 +87,6 @@ func addAssetFiles(cfg *igntypes.Config, params *api.ClusterParams, prefix strin
 		} else {
 			addFileBytes(cfg, data, destPath, 0644)
 		}
-		addFileBytes(cfg, data, destPath, 0644)
 		return nil
 	}
 	files, err := assets.AssetDir(assetPath)
