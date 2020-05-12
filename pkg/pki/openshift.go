@@ -32,22 +32,32 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 		return errors.Wrapf(err, "failed to parse service CIDR: %q", params.ServiceCIDR)
 	}
 	kubeIP := firstIP(serviceIPNet)
+	apiServerHostNames := []string{
+		"kubernetes",
+		"kubernetes.default.svc",
+		"kubernetes.default.svc.cluster.local",
+		"kube-apiserver",
+		fmt.Sprintf("kube-apiserver.%s.svc", params.Namespace),
+		fmt.Sprintf("kube-apiserver.%s.svc.cluster.local", params.Namespace),
+	}
+	apiServerIPs := []string{
+		kubeIP.String(),
+		params.ExternalAPIIPAddress,
+	}
+	if isNumericIP(params.ExternalAPIAddress) {
+		apiServerIPs = append(apiServerIPs, params.ExternalAPIAddress)
+	} else {
+		apiServerHostNames = append(apiServerHostNames, params.ExternalAPIAddress)
+	}
+	var oauthNumericIPs, oauthHostNames []string
+	if isNumericIP(params.ExternalOAuthAddress) {
+		oauthNumericIPs = append(oauthNumericIPs, params.ExternalOAuthAddress)
+	} else {
+		oauthHostNames = append(oauthHostNames, params.ExternalOAuthAddress)
+	}
 	certs := []certSpec{
 		// kube-apiserver
-		cert("kube-apiserver-server", "root-ca", "kubernetes", "kubernetes",
-			[]string{
-				"kubernetes",
-				"kubernetes.default.svc",
-				"kubernetes.default.svc.cluster.local",
-				"kube-apiserver",
-				fmt.Sprintf("kube-apiserver.%s.svc", params.Namespace),
-				fmt.Sprintf("kube-apiserver.%s.svc.cluster.local", params.Namespace),
-				params.ExternalAPIAddress,
-			},
-			[]string{
-				kubeIP.String(),
-				params.ExternalAPIIPAddress,
-			}),
+		cert("kube-apiserver-server", "root-ca", "kubernetes", "kubernetes", apiServerHostNames, apiServerIPs),
 		cert("kube-apiserver-kubelet", "root-ca", "system:kube-apiserver", "kubernetes", nil, nil),
 		cert("kube-apiserver-aggregator-proxy-client", "root-ca", "system:openshift-aggregator", "kubernetes", nil, nil),
 
@@ -93,10 +103,7 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 				params.ExternalOpenVPNAddress,
 			}, nil),
 		// oauth server
-		cert("oauth-openshift", "root-ca", "openshift-oauth", "openshift",
-			[]string{
-				params.ExternalOAuthAddress,
-			}, nil),
+		cert("oauth-openshift", "root-ca", "openshift-oauth", "openshift", oauthHostNames, oauthNumericIPs),
 		cert("openvpn-kube-apiserver-client", "openvpn-ca", "kube-apiserver", "kubernetes", nil, nil),
 		cert("openvpn-router-proxy-client", "openvpn-ca", "router-proxy", "kubernetes", nil, nil),
 		cert("openvpn-worker-client", "openvpn-ca", "worker", "kubernetes", nil, nil),
@@ -135,4 +142,8 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 		return err
 	}
 	return nil
+}
+
+func isNumericIP(s string) bool {
+	return net.ParseIP(s) != nil
 }
