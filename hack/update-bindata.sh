@@ -8,7 +8,7 @@ OUTPUT_FILE="${OUTPUT_FILE:-./pkg/assets/bindata.go}"
 cd "${SRC_DIR}"
 
 # ensure go-bindata
-GOBIN=${SRC_DIR}/bin go install github.com/jteeuwen/go-bindata/go-bindata
+GOBIN=${SRC_DIR}/bin GO111MODULE=off go get github.com/jteeuwen/go-bindata/go-bindata
 
 # go-bindata generates code assets from the yaml we want to deploy by the operator.
 "./bin/go-bindata" \
