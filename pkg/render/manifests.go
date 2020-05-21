@@ -12,12 +12,12 @@ import (
 )
 
 // RenderClusterManifests renders manifests for a hosted control plane cluster
-func RenderClusterManifests(params *api.ClusterParams, pullSecretFile, outputDir string, etcd bool, vpn bool, externalOauth bool, includeRegistry bool) error {
+func RenderClusterManifests(params *api.ClusterParams, pullSecretFile, pkiDir, outputDir string, etcd bool, vpn bool, externalOauth bool, includeRegistry bool) error {
 	releaseInfo, err := release.GetReleaseInfo(params.ReleaseImage, params.OriginReleasePrefix, pullSecretFile)
 	if err != nil {
 		return err
 	}
-	ctx := newClusterManifestContext(releaseInfo.Images, releaseInfo.Versions, params, outputDir, vpn)
+	ctx := newClusterManifestContext(releaseInfo.Images, releaseInfo.Versions, params, pkiDir, outputDir, vpn)
 	ctx.setupManifests(etcd, vpn, externalOauth, includeRegistry)
 	return ctx.renderManifests()
 }
@@ -28,7 +28,7 @@ type clusterManifestContext struct {
 	userManifests     map[string]string
 }
 
-func newClusterManifestContext(images, versions map[string]string, params interface{}, outputDir string, includeVPN bool) *clusterManifestContext {
+func newClusterManifestContext(images, versions map[string]string, params interface{}, pkiDir, outputDir string, includeVPN bool) *clusterManifestContext {
 	ctx := &clusterManifestContext{
 		renderContext: newRenderContext(params, outputDir),
 		userManifests: make(map[string]string),
@@ -45,6 +45,7 @@ func newClusterManifestContext(images, versions map[string]string, params interf
 		"randomString":      randomString,
 		"includeData":       includeDataFunc(),
 		"trimTrailingSpace": trimTrailingSpace,
+		"pki":               pkiFunc(pkiDir),
 	})
 	return ctx
 }
@@ -94,6 +95,9 @@ func (c *clusterManifestContext) oauthOpenshiftServer() {
 		"oauth-openshift/oauth-server-service.yaml",
 		"oauth-openshift/v4-0-config-system-branding.yaml",
 		"oauth-openshift/oauth-server-sessionsecret-secret.yaml",
+	)
+	c.addUserManifestFiles(
+		"oauth-openshift/ingress-certs-secret.yaml",
 	)
 }
 

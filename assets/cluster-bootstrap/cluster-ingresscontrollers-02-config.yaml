@@ -6,4 +6,6 @@ metadata:
 spec:
   endpointPublishingStrategy:
     type: Private
+  defaultCertificate:
+    name: default-ingress-cert
 status: {}
