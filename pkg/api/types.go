@@ -4,7 +4,7 @@ type ClusterParams struct {
 	Namespace                           string                 `json:"namespace"`
 	ExternalAPIAddress                  string                 `json:"externalAPIAddress"`
 	ExternalAPIPort                     uint                   `json:"externalAPIPort"`
-	ExternalAPIIPAddress                string                 `json:"externalAPIAddress"`
+	ExternalAPIIPAddress                string                 `json:"externalAPIIPAddress"`
 	ExternalOpenVPNAddress              string                 `json:"externalVPNAddress"`
 	ExternalOpenVPNPort                 uint                   `json:"externalVPNPort"`
 	ExternalOAuthAddress                string                 `json:"externalOAuthAddress"`

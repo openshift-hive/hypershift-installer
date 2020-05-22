@@ -49,12 +49,14 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 	} else {
 		apiServerHostNames = append(apiServerHostNames, params.ExternalAPIAddress)
 	}
-	var oauthNumericIPs, oauthHostNames []string
+	var ingressNumericIPs, ingressHostNames []string
 	if isNumericIP(params.ExternalOAuthAddress) {
-		oauthNumericIPs = append(oauthNumericIPs, params.ExternalOAuthAddress)
+		ingressNumericIPs = append(ingressNumericIPs, params.ExternalOAuthAddress)
 	} else {
-		oauthHostNames = append(oauthHostNames, params.ExternalOAuthAddress)
+		ingressHostNames = append(ingressHostNames, params.ExternalOAuthAddress)
 	}
+	ingressHostNames = append(ingressHostNames, fmt.Sprintf("*.%s", params.IngressSubdomain))
+
 	certs := []certSpec{
 		// kube-apiserver
 		cert("kube-apiserver-server", "root-ca", "kubernetes", "kubernetes", apiServerHostNames, apiServerIPs),
@@ -103,7 +105,7 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 				params.ExternalOpenVPNAddress,
 			}, nil),
 		// oauth server
-		cert("oauth-openshift", "root-ca", "openshift-oauth", "openshift", oauthHostNames, oauthNumericIPs),
+		cert("ingress-openshift", "root-ca", "openshift-ingress", "openshift", ingressHostNames, ingressNumericIPs),
 		cert("openvpn-kube-apiserver-client", "openvpn-ca", "kube-apiserver", "kubernetes", nil, nil),
 		cert("openvpn-router-proxy-client", "openvpn-ca", "router-proxy", "kubernetes", nil, nil),
 		cert("openvpn-worker-client", "openvpn-ca", "worker", "kubernetes", nil, nil),

@@ -203,7 +203,7 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 
 	log.Info("Creating router shard")
 	operatorClient, err := operatorclient.NewForConfig(cfg)
-	if err := createIngressController(operatorClient, name, parentDomain); err != nil {
+	if err := createIngressController(operatorClient, name, hyperHostDomain); err != nil {
 		return fmt.Errorf("cannot create router shard: %v", err)
 	}
 
@@ -261,9 +261,9 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	params.ServiceCIDR = clusterServiceCIDR.String()
 	params.PodCIDR = clusterPodCIDR.String()
 	params.ReleaseImage = releaseImage
-	params.IngressSubdomain = fmt.Sprintf("apps.%s.%s", name, parentDomain)
+	params.IngressSubdomain = fmt.Sprintf("apps.%s.%s", name, hyperHostDomain)
 	params.OpenShiftAPIClusterIP = openshiftClusterIP
-	params.BaseDomain = fmt.Sprintf("%s.%s", name, parentDomain)
+	params.BaseDomain = fmt.Sprintf("%s.%s", name, hyperHostDomain)
 	params.CloudProvider = platformType
 	params.InternalAPIPort = 6443
 	params.EtcdClientName = "etcd-client"
@@ -321,7 +321,7 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 		return fmt.Errorf("failed to render PKI secrets: %v", err)
 	}
 	params.OpenshiftAPIServerCABundle = base64.StdEncoding.EncodeToString(caBytes)
-	if err = render.RenderClusterManifests(params, pullSecretFile, manifestsDir, true, true, true, true); err != nil {
+	if err = render.RenderClusterManifests(params, pullSecretFile, pkiDir, manifestsDir, true, true, true, true); err != nil {
 		return fmt.Errorf("failed to render manifests for cluster: %v", err)
 	}
 
