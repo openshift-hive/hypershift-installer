@@ -7,20 +7,27 @@ The hypershift installer is a program for running OpenShift 4.x in a hyperscale 
 
 ### Build and run the installer
 
-* Install an Openshift 4.x cluster on AWS using the traditional installer
+* Install an Openshift 4.x cluster on AWS/GCP/Azure using the traditional installer
+* Obtain the latest 4.4 `ibm-roks` binary from [openshift/ibm-roks-toolkit releases](https://github.com/openshift/ibm-roks-toolkit/releases)
+* Ensure the `ibm-roks` binary is in your path.
 * Run `make` on this repository
 * Setup your KUBECONFIG to point to the admin kubeconfig of your current AWS cluster
   (ie. `export KUBECONFIG=${INSTALL_DIR}/auth/kubeconfig`)
-* Run `./bin/hypershift-installer install NAME` to install a new Hypershift cluster on your
-  existing AWS cluster. The `NAME` parameter will be used to create a namespace
-  on your existing cluster and place all control plane components in it. Infrastructure
-  will be created on AWS to support your new cluster instance, including:
-  - Network Load Balancers for API, Router, VPN
-  - DNS entries for API, Router, VPN
+* Run `./bin/hypershift-installer create install-config NAME` to create a new install-config
+  for your child cluster. The `install-config.yaml` will be placed in your current directory.
+  The `NAME` parameter must be unique for the parent cluster. It will be used by the `create cluster`
+  command to create a namespace on your existing cluster and place all control plane components in it.
+* Run `./bin/hypershift-installer create cluster` command to install a new child cluster on your
+  existing cluster.  
+  This command will create a directory named `install-files` under the current directory
+  that contains manifests and PKI resources generated for the child cluster.
+  The command will create the necessary resources on the parent cluster
+  to support the child cluster, including:
+  - A router shard (IngressController) to support routing to the child cluster
+  - Services of load balancer type for API, OAuth, and VPN
   - Worker machine instances for your new cluster
 
-### Uninstalling on AWS
+### Uninstalling the child cluster
 * Setup your KUBECONFIG to point to the management cluster
-* Run `./bin/hypershift-installer uninstall NAME` where NAME is the name you gave your
-  cluster when installing.
-
+* Run `./bin/hypershift-installer destroy cluster NAME` where NAME is the name you gave your
+  cluster when creating the `install-config.yaml`.

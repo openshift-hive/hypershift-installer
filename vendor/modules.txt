@@ -210,6 +210,8 @@ github.com/jonboulle/clockwork
 github.com/json-iterator/go
 # github.com/konsorten/go-windows-terminal-sequences v1.0.2
 github.com/konsorten/go-windows-terminal-sequences
+# github.com/krishicks/yaml-patch v0.0.10
+github.com/krishicks/yaml-patch
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 github.com/liggitt/tabwriter
 # github.com/mailru/easyjson v0.7.0

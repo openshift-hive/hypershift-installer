@@ -16,7 +16,7 @@ spec:
       periodSeconds: 120
       successThreshold: 1
       tcpSocket:
-        host: {{ .ExternalAPIIPAddress }}
+        host: {{ .ExternalAPIAddress }}
         port: 6443
       timeoutSeconds: 60
     command:

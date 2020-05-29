@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -x
-ip addr add {{ .ExternalAPIIPAddress }}/32 brd {{ .ExternalAPIIPAddress }} scope host dev lo
-ip route add {{ .ExternalAPIIPAddress }}/32 dev lo scope link src {{ .ExternalAPIIPAddress }}
+ip addr add {{ .ExternalAPIAddress }}/32 brd {{ .ExternalAPIAddress }} scope host dev lo
+ip route add {{ .ExternalAPIAddress }}/32 dev lo scope link src {{ .ExternalAPIAddress }}

@@ -45,6 +45,7 @@ require (
 	github.com/aws/aws-sdk-go v1.30.0 // indirect
 	github.com/coreos/ignition v0.35.0
 	github.com/google/uuid v1.1.1
+	github.com/krishicks/yaml-patch v0.0.10
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/client-go v0.0.0-20200422192633-6f6c07fc2a70
 	github.com/openshift/installer v0.9.0-master.0.20200528191708-78bc158696f3
@@ -59,4 +60,5 @@ require (
 	k8s.io/cli-runtime v0.18.3
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kubectl v0.18.3
+	sigs.k8s.io/yaml v1.2.0
 )

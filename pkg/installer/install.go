@@ -1,6 +1,7 @@
 package installer
 
 import (
+	"context"
 	crand "crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -11,19 +12,19 @@ import (
 	"io/ioutil"
 	"math/big"
 	"math/rand"
-	"net"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 
-	gocidr "github.com/apparentlymart/go-cidr/cidr"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,25 +38,26 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/yaml"
 
 	operatorv1 "github.com/openshift/api/operator/v1"
 	operatorclient "github.com/openshift/client-go/operator/clientset/versioned"
-
 	securityclient "github.com/openshift/client-go/security/clientset/versioned"
+	installertypes "github.com/openshift/installer/pkg/types"
 
 	"github.com/openshift-hive/hypershift-installer/pkg/api"
+	"github.com/openshift-hive/hypershift-installer/pkg/assets"
 	"github.com/openshift-hive/hypershift-installer/pkg/ignition"
 	"github.com/openshift-hive/hypershift-installer/pkg/pki"
 	"github.com/openshift-hive/hypershift-installer/pkg/render"
-
-	"github.com/openshift-hive/hypershift-installer/pkg/assets"
 )
 
 const (
 	externalOauthPort     = 8443
 	workerMachineSetCount = 3
 
-	defaultControlPlaneOperatorImage = "quay.io/hypershift/hypershift-operator:latest"
+	defaultControlPlaneOperatorImage = "registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-4.4:control-plane-operator"
+	defaultHypershiftOperatorImage   = "quay.io/hypershift/hypershift-operator:latest"
 
 	DefaultAPIServerIPAddress = "172.20.0.1"
 
@@ -72,6 +74,7 @@ var (
 		"openshift-apiserver-service.yaml",
 		"v4-0-config-system-branding.yaml",
 		"oauth-server-service.yaml",
+		"kube-apiserver-service.yaml",
 	}
 	coreScheme = runtime.NewScheme()
 	coreCodecs = serializer.NewCodecFactory(coreScheme)
@@ -87,184 +90,166 @@ func init() {
 	}
 }
 
-func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) error {
+type CreateClusterOpts struct {
+	Directory    string
+	ReleaseImage string
+	Wait         bool
+	DryRun       bool
+}
 
-	// First, ensure that we can access the host cluster
-	cfg, err := loadConfig()
+func (o *CreateClusterOpts) Run() error {
+
+	config := &installertypes.InstallConfig{}
+	installConfigPath := filepath.Join(o.Directory, installConfigFileName)
+	configBytes, err := ioutil.ReadFile(installConfigPath)
 	if err != nil {
-		return fmt.Errorf("cannot access existing cluster; make sure a connection to host cluster is available: %v", err)
+		return errors.Wrapf(err, "failed to read install-config %s", installConfigPath)
+	}
+	if err := yaml.Unmarshal(configBytes, config); err != nil {
+		return errors.Wrap(err, "failed to parse install-config YAML")
+	}
+	if o.DryRun && len(o.ReleaseImage) == 0 {
+		return errors.New("You must specify a release image when doing a dry run")
 	}
 
-	dynamicClient, err := dynamic.NewForConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("cannot obtain dynamic client: %v", err)
-	}
-	// Extract config information from management cluster
-	sshKey, err := getSSHPublicKey(dynamicClient)
-	if err != nil {
-		return fmt.Errorf("failed to fetch an SSH public key from existing cluster: %v", err)
-	}
-	log.Debugf("The SSH public key is: %s", string(sshKey))
+	releaseImage := o.ReleaseImage
+	name := config.ObjectMeta.Name
+	apiAddress := fmt.Sprintf("api.%s", config.BaseDomain)
+	oauthAddress := fmt.Sprintf("oauth.%s.%s", name, config.BaseDomain)
+	vpnAddress := fmt.Sprintf("vpn.%s.%s", name, config.BaseDomain)
+	openshiftClusterIP := "172.30.1.20"
 
-	client, err := kubeclient.NewForConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to obtain a kubernetes client from existing configuration: %v", err)
-	}
+	var dynamicClient dynamic.Interface
+	var client kubeclient.Interface
+	var cfg *rest.Config
 
-	if releaseImage == "" {
-		releaseImage, err = getReleaseImage(dynamicClient)
+	if !o.DryRun {
+		// First, ensure that we can access the host cluster
+		var err error
+		cfg, err = loadConfig()
 		if err != nil {
-			return fmt.Errorf("failed to obtain release image from host cluster: %v", err)
+			return errors.Wrap(err, "cannot access existing cluster; make sure a connection to host cluster is available")
 		}
-	}
 
-	pullSecret, err := getPullSecret(client)
-	if err != nil {
-		return fmt.Errorf("failed to obtain a pull secret from cluster: %v", err)
-	}
-	log.Debugf("The pull secret is: %v", pullSecret)
+		ctx := context.Background()
 
-	infraName, platformType, err := getInfrastructureInfo(dynamicClient)
-	if err != nil {
-		return fmt.Errorf("failed to obtain infrastructure info for cluster: %v", err)
-	}
-	log.Debugf("The management cluster infra name is: %s", infraName)
+		dynamicClient, err = dynamic.NewForConfig(cfg)
+		if err != nil {
+			return errors.Wrap(err, "cannot obtain dynamic client")
+		}
+		client, err = kubeclient.NewForConfig(cfg)
+		if err != nil {
+			return errors.Wrap(err, "failed to obtain a kubernetes client from existing configuration")
+		}
 
-	serviceCIDR, podCIDR, err := getNetworkInfo(dynamicClient)
-	if err != nil {
-		return fmt.Errorf("failed to obtain network info for cluster: %v", err)
-	}
+		// Start creating resources on management cluster
+		_, err = client.CoreV1().Namespaces().Get(ctx, config.ObjectMeta.Name, metav1.GetOptions{})
+		if err == nil {
+			return fmt.Errorf("target namespace %s already exists on management cluster", name)
+		}
+		if !apierrors.IsNotFound(err) {
+			return errors.Wrap(err, "unexpected error getting namespaces from management cluster")
+		}
+		log.Infof("Creating namespace %s", name)
+		ns := &corev1.Namespace{}
+		ns.Name = name
+		_, err = client.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "failed to create namespace %s", name)
+		}
 
-	dnsZoneID, parentDomain, hyperHostDomain, err := getDNSZoneInfo(dynamicClient)
-	if err != nil {
-		return fmt.Errorf("failed to obtain public zone information: %v", err)
-	}
-	log.Debugf("Using public DNS Zone: %s and parent suffix: %s", dnsZoneID, parentDomain)
+		if releaseImage == "" {
+			releaseImage, err = getReleaseImage(dynamicClient)
+			if err != nil {
+				return errors.Wrap(err, "failed to get release image from parent cluster")
+			}
+		}
 
-	// Start creating resources on management cluster
-	_, err = client.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
-	if err == nil {
-		return fmt.Errorf("target namespace %s already exists on management cluster", name)
-	}
-	if !errors.IsNotFound(err) {
-		return fmt.Errorf("unexpected error getting namespaces from management cluster: %v", err)
-	}
-	log.Infof("Creating namespace %s", name)
-	ns := &corev1.Namespace{}
-	ns.Name = name
-	_, err = client.CoreV1().Namespaces().Create(ns)
-	if err != nil {
-		return fmt.Errorf("failed to create namespace %s: %v", name, err)
-	}
+		// Ensure that we can run privileged pods
+		securityClient, err := securityclient.NewForConfig(cfg)
+		if err != nil {
+			return errors.Wrap(err, "failed to create security client")
+		}
+		if err = ensureVPNSCC(securityClient, name); err != nil {
+			return errors.Wrap(err, "failed to ensure privileged SCC for the new namespace")
+		}
 
-	// Ensure that we can run privileged pods
-	securityClient, err := securityclient.NewForConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to create security client: %v", err)
-	}
-	if err = ensureVPNSCC(securityClient, name); err != nil {
-		return fmt.Errorf("failed to ensure privileged SCC for the new namespace: %v", err)
-	}
+		// Create pull secret
+		log.Infof("Creating pull secret")
+		if err := createPullSecret(client, name, config.PullSecret); err != nil {
+			return errors.Wrap(err, "failed to create pull secret")
+		}
 
-	// Create pull secret
-	log.Infof("Creating pull secret")
-	if err := createPullSecret(client, name, pullSecret); err != nil {
-		return fmt.Errorf("failed to create pull secret: %v", err)
-	}
+		// Create Kube APIServer service
+		log.Infof("Creating Kube API service")
+		apiNodePort, err := createKubeAPIServerService(client, name)
+		if err != nil {
+			return errors.Wrap(err, "failed to create Kube API service")
+		}
+		log.Infof("Created Kube API service with NodePort %d", apiNodePort)
 
-	// Create Kube APIServer service
-	log.Infof("Creating Kube API service")
-	apiNodePort, err := createKubeAPIServerService(client, name)
-	if err != nil {
-		log.WithError(err).Error("failed to create Kube API service")
-		return err
-	}
-	log.Infof("Created Kube API service with NodePort %d", apiNodePort)
+		log.Infof("Creating VPN service")
+		if err := createVPNServerService(client, name); err != nil {
+			return errors.Wrap(err, "failed to create vpn server service")
+		}
+		log.Info("Created VPN service")
 
-	log.Infof("Creating VPN service")
-	if err := createVPNServerService(client, name); err != nil {
-		log.WithError(err).Error("failed to create vpn server service")
-		return err
-	}
-	log.Info("Created VPN service")
+		log.Infof("Creating Openshift API service")
+		openshiftClusterIP, err = createOpenshiftService(client, name)
+		if err != nil {
+			return errors.Wrap(err, "failed to create openshift server service")
+		}
+		log.Infof("Created Openshift API service with cluster IP: %s", openshiftClusterIP)
 
-	log.Infof("Creating Openshift API service")
-	openshiftClusterIP, err := createOpenshiftService(client, name)
-	if err != nil {
-		return fmt.Errorf("failed to create openshift server service: %v", err)
-	}
-	log.Infof("Created Openshift API service with cluster IP: %s", openshiftClusterIP)
+		log.Info("Creating OAuth service")
+		if err := createOauthService(client, name); err != nil {
+			return errors.Wrap(err, "error creating service for oauth")
+		}
 
-	log.Info("Creating OAuth service")
-	if err := createOauthService(client, name); err != nil {
-		log.WithError(err).Error("error creating Service for OAuth")
-		return err
-	}
+		log.Info("Creating router shard")
+		operatorClient, err := operatorclient.NewForConfig(cfg)
+		if err := createIngressController(operatorClient, name, config.BaseDomain); err != nil {
+			return errors.Wrap(err, "cannot create router shard")
+		}
 
-	log.Info("Creating router shard")
-	operatorClient, err := operatorclient.NewForConfig(cfg)
-	if err := createIngressController(operatorClient, name, hyperHostDomain); err != nil {
-		return fmt.Errorf("cannot create router shard: %v", err)
-	}
+		log.Info("Waiting for API load balancer")
+		apiAddress, err = waitForServiceLoadBalancerAddress(client, name, kubeAPIServerServiceName)
+		if err != nil {
+			return errors.Wrap(err, "failed to get kube API service address")
+		}
+		log.Debugf("API address from Service Load Balancer: %s", apiAddress)
 
-	_, serviceCIDRNet, err := net.ParseCIDR(serviceCIDR)
-	if err != nil {
-		return fmt.Errorf("cannot parse service CIDR %s: %v", serviceCIDR, err)
-	}
+		log.Info("Waiting for OAuth load balancer")
+		oauthAddress, err = waitForServiceLoadBalancerAddress(client, name, oauthServiceName)
+		if err != nil {
+			return errors.Wrap(err, "failed to get OAuth service address")
+		}
+		log.Debugf("OAuth address from Service Load Balancer: %s", oauthAddress)
 
-	_, podCIDRNet, err := net.ParseCIDR(podCIDR)
-	if err != nil {
-		return fmt.Errorf("cannot parse pod CIDR %s: %v", podCIDR, err)
-	}
-
-	serviceCIDRPrefixLen, _ := serviceCIDRNet.Mask.Size()
-	clusterServiceCIDR, exceedsMax := gocidr.NextSubnet(serviceCIDRNet, serviceCIDRPrefixLen)
-	if exceedsMax {
-		return fmt.Errorf("cluster service CIDR exceeds max address space")
-	}
-
-	podCIDRPrefixLen, _ := podCIDRNet.Mask.Size()
-	clusterPodCIDR, exceedsMax := gocidr.NextSubnet(podCIDRNet, podCIDRPrefixLen)
-	if exceedsMax {
-		return fmt.Errorf("cluster pod CIDR exceeds max address space")
-	}
-
-	apiAddress, err := waitForServiceLoadBalancerAddress(client, name, kubeAPIServerServiceName)
-	if err != nil {
-		log.WithError(err).Error("failed to get kube API service address")
-		return err
-	}
-	log.Debugf("API address from Service Load Balancer: %s", apiAddress)
-
-	oauthAddress, err := waitForServiceLoadBalancerAddress(client, name, oauthServiceName)
-	if err != nil {
-		log.WithError(err).Error("failed to get OAuth service address")
-		return err
-	}
-	log.Debugf("OAuth address from Service Load Balancer: %s", oauthAddress)
-
-	vpnAddress, err := waitForServiceLoadBalancerAddress(client, name, vpnServiceName)
-	if err != nil {
-		log.WithError(err).Error("failed to get VPN service address")
-		return err
+		log.Info("Waiting for VPN load balancer")
+		vpnAddress, err = waitForServiceLoadBalancerAddress(client, name, vpnServiceName)
+		if err != nil {
+			return errors.Wrap(err, "failed to get VPN service address")
+		}
+		log.Debugf("VPN address from Service Load Balancer: %s", vpnAddress)
 	}
 
 	params := api.NewClusterParams()
 	params.Namespace = name
-	params.ExternalAPIAddress = apiAddress
+	params.ExternalAPIDNSName = apiAddress
 	params.ExternalAPIPort = 6443
-	params.ExternalAPIIPAddress = DefaultAPIServerIPAddress
+	params.ExternalAPIAddress = DefaultAPIServerIPAddress
 	params.ExternalOpenVPNAddress = vpnAddress
 	params.ExternalOpenVPNPort = 1194
-	params.ExternalOAuthAddress = oauthAddress
+	params.ExternalOauthDNSName = oauthAddress
 	params.ExternalOauthPort = externalOauthPort
-	params.ServiceCIDR = clusterServiceCIDR.String()
-	params.PodCIDR = clusterPodCIDR.String()
+	params.ServiceCIDR = config.Networking.ServiceNetwork[0].String()
+	params.PodCIDR = config.Networking.ClusterNetwork[0].CIDR.String()
 	params.ReleaseImage = releaseImage
-	params.IngressSubdomain = fmt.Sprintf("apps.%s.%s", name, hyperHostDomain)
+	params.IngressSubdomain = fmt.Sprintf("apps.%s", config.ClusterDomain())
 	params.OpenShiftAPIClusterIP = openshiftClusterIP
-	params.BaseDomain = fmt.Sprintf("%s.%s", name, hyperHostDomain)
-	params.CloudProvider = platformType
+	params.BaseDomain = config.ClusterDomain()
+	params.CloudProvider = getProvider(config)
 	params.InternalAPIPort = 6443
 	params.EtcdClientName = "etcd-client"
 	params.NetworkType = "OpenShiftSDN"
@@ -276,35 +261,52 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	} else {
 		params.ControlPlaneOperatorImage = cpOperatorImage
 	}
+	hypershiftOperatorImage := os.Getenv("HYPERSHIFT_OPERATOR_IMAGE_OVERRIDE")
+	if hypershiftOperatorImage == "" {
+		params.HypershiftOperatorImage = defaultHypershiftOperatorImage
+	} else {
+		params.HypershiftOperatorImage = hypershiftOperatorImage
+	}
+	params.HypershiftOperatorControllers = []string{"route-sync", "auto-approver", "kubeadmin-password"}
 
-	workingDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return err
+	workingDir := filepath.Join(o.Directory, "install-files")
+	if err = os.Mkdir(workingDir, 0755); err != nil {
+		if os.IsExist(err) {
+			if err = os.RemoveAll(workingDir); err != nil {
+				return err
+			}
+			if err = os.Mkdir(workingDir, 0755); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 	log.Infof("The working directory is %s", workingDir)
 	pkiDir := filepath.Join(workingDir, "pki")
-	if err = os.Mkdir(pkiDir, 0755); err != nil {
-		return fmt.Errorf("cannot create temporary PKI directory: %v", err)
+	if err = os.MkdirAll(pkiDir, 0755); err != nil {
+		return errors.Wrap(err, "cannot create temporary PKI directory")
 	}
 	log.Info("Generating PKI")
+	dhParamsFile := os.Getenv("DH_PARAMS")
 	if len(dhParamsFile) > 0 {
 		if err = copyFile(dhParamsFile, filepath.Join(pkiDir, "openvpn-dh.pem")); err != nil {
-			return fmt.Errorf("cannot copy dh parameters file %s: %v", dhParamsFile, err)
+			return errors.Wrapf(err, "cannot copy dh parameters file %s", dhParamsFile)
 		}
 	}
 	if err := pki.GeneratePKI(params, pkiDir); err != nil {
 		return fmt.Errorf("failed to generate PKI assets: %v", err)
 	}
 	manifestsDir := filepath.Join(workingDir, "manifests")
-	if err = os.Mkdir(manifestsDir, 0755); err != nil {
+	if err = os.MkdirAll(manifestsDir, 0755); err != nil {
 		return fmt.Errorf("cannot create temporary manifests directory: %v", err)
 	}
 	pullSecretFile := filepath.Join(workingDir, "pull-secret")
-	if err = ioutil.WriteFile(pullSecretFile, []byte(pullSecret), 0644); err != nil {
+	if err = ioutil.WriteFile(pullSecretFile, []byte(config.PullSecret), 0644); err != nil {
 		return fmt.Errorf("failed to create temporary pull secret file: %v", err)
 	}
 	log.Info("Generating ignition for workers")
-	if err = ignition.GenerateIgnition(params, sshKey, pullSecretFile, pkiDir, workingDir); err != nil {
+	if err = ignition.GenerateIgnition(params, []byte(config.SSHKey), pullSecretFile, pkiDir, workingDir); err != nil {
 		return fmt.Errorf("cannot generate ignition file for workers: %v", err)
 	}
 
@@ -321,15 +323,48 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 		return fmt.Errorf("failed to render PKI secrets: %v", err)
 	}
 	params.OpenshiftAPIServerCABundle = base64.StdEncoding.EncodeToString(caBytes)
+
+	// Save Params
+	clusterYAMLFileName := filepath.Join(workingDir, "cluster.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to create cluster configuration file: %v", err)
+	}
+	clusterYAMLBytes, err := yaml.Marshal(params)
+	if err != nil {
+		return fmt.Errorf("failed to marshal configuration into yaml: %v", err)
+	}
+	if err = ioutil.WriteFile(clusterYAMLFileName, clusterYAMLBytes, 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %v", err)
+	}
+	ibmROKSBinary, err := getROKSBinary()
+	if err != nil {
+		return fmt.Errorf("Cannot find ibm-roks binary. Either place it in PATH, or set its path in IBM_ROKS: %v", err)
+	}
+	cmd := exec.Command(ibmROKSBinary, "render",
+		"--config", clusterYAMLFileName,
+		"--output-dir", manifestsDir,
+		"--pull-secret", pullSecretFile,
+	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err = cmd.Run(); err != nil {
+		return fmt.Errorf("Failed to render manifests using IBM ROKS toolkit: %v", err)
+	}
 	if err = render.RenderClusterManifests(params, pullSecretFile, pkiDir, manifestsDir, true, true, true, true); err != nil {
 		return fmt.Errorf("failed to render manifests for cluster: %v", err)
 	}
 
-	// Create a machineset for the new cluster's worker nodes
-	if err = generateWorkerMachineset(dynamicClient, infraName, name, filepath.Join(manifestsDir, "machineset.json")); err != nil {
-		return fmt.Errorf("failed to generate worker machineset: %v", err)
+	if !o.DryRun {
+		infraName, _, _, err := getInfrastructureInfo(dynamicClient)
+		if err != nil {
+			return errors.Wrap(err, "failed to get infrastructure information")
+		}
+		// Create a machineset for the new cluster's worker nodes
+		if err = generateWorkerMachineset(dynamicClient, infraName, name, filepath.Join(manifestsDir, "machineset.json")); err != nil {
+			return fmt.Errorf("failed to generate worker machineset: %v", err)
+		}
 	}
-	if err = generateUserDataSecret(name, hyperHostDomain, filepath.Join(manifestsDir, "machine-user-data.json")); err != nil {
+	if err = generateUserDataSecret(name, config.BaseDomain, filepath.Join(manifestsDir, "machine-user-data.json")); err != nil {
 		return fmt.Errorf("failed to generate user data secret: %v", err)
 	}
 	kubeadminPassword, err := generateKubeadminPassword()
@@ -345,26 +380,28 @@ func InstallCluster(name, releaseImage, dhParamsFile string, waitForReady bool) 
 	if err = generateKubeconfigSecret(filepath.Join(pkiDir, "admin.kubeconfig"), filepath.Join(manifestsDir, "kubeconfig-secret.json")); err != nil {
 		return fmt.Errorf("failed to create kubeconfig secret manifest for management cluster: %v", err)
 	}
-	if err = generateTargetPullSecret([]byte(pullSecret), filepath.Join(manifestsDir, "user-pull-secret.json")); err != nil {
+	if err = generateTargetPullSecret([]byte(config.PullSecret), filepath.Join(manifestsDir, "user-pull-secret.json")); err != nil {
 		return fmt.Errorf("failed to create pull secret manifest for target cluster: %v", err)
 	}
 
-	// Create the system branding manifest (cannot be applied because it's too large)
-	if err = createBrandingSecret(client, name, filepath.Join(manifestsDir, "v4-0-config-system-branding.yaml")); err != nil {
-		return fmt.Errorf("failed to create oauth branding secret: %v", err)
+	if !o.DryRun {
+		// Create the system branding manifest (cannot be applied because it's too large)
+		if err = createBrandingSecret(client, name, filepath.Join(manifestsDir, "v4-0-config-system-branding.yaml")); err != nil {
+			return fmt.Errorf("failed to create oauth branding secret: %v", err)
+		}
+		excludedDir := filepath.Join(workingDir, "excluded")
+		err = os.MkdirAll(excludedDir, 0755)
+		if err != nil {
+			return fmt.Errorf("failed to create a temporary directory for excluded manifests")
+		}
+		log.Infof("Excluded manifests directory: %s", excludedDir)
+		if err = applyManifests(cfg, name, manifestsDir, excludeManifests, excludedDir); err != nil {
+			return fmt.Errorf("failed to apply manifests: %v", err)
+		}
+		log.Infof("Cluster resources applied")
 	}
 
-	excludedDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return fmt.Errorf("failed to create a temporary directory for excluded manifests")
-	}
-	log.Infof("Excluded manifests directory: %s", excludedDir)
-	if err = applyManifests(cfg, name, manifestsDir, excludeManifests, excludedDir); err != nil {
-		return fmt.Errorf("failed to apply manifests: %v", err)
-	}
-	log.Infof("Cluster resources applied")
-
-	if waitForReady {
+	if o.Wait && !o.DryRun {
 		log.Infof("Waiting up to 10 minutes for API endpoint to be available.")
 		if err = waitForAPIEndpoint(pkiDir, apiAddress); err != nil {
 			return fmt.Errorf("failed to access API endpoint: %v", err)
@@ -487,7 +524,7 @@ func createBrandingSecret(client kubeclient.Interface, namespace, fileName strin
 	if !ok {
 		return fmt.Errorf("object in %s is not a secret", fileName)
 	}
-	_, err = client.CoreV1().Secrets(namespace).Create(secret)
+	_, err = client.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 	return err
 }
 
@@ -503,7 +540,7 @@ func createKubeAPIServerService(client kubeclient.Interface, namespace string) (
 			TargetPort: intstr.FromInt(6443),
 		},
 	}
-	svc, err := client.CoreV1().Services(namespace).Create(svc)
+	svc, err := client.CoreV1().Services(namespace).Create(context.TODO(), svc, metav1.CreateOptions{})
 	if err != nil {
 		return 0, err
 	}
@@ -522,7 +559,7 @@ func createVPNServerService(client kubeclient.Interface, namespace string) error
 			TargetPort: intstr.FromInt(1194),
 		},
 	}
-	_, err := client.CoreV1().Services(namespace).Create(svc)
+	_, err := client.CoreV1().Services(namespace).Create(context.TODO(), svc, metav1.CreateOptions{})
 	return err
 }
 
@@ -539,7 +576,7 @@ func createOpenshiftService(client kubeclient.Interface, namespace string) (stri
 			TargetPort: intstr.FromInt(8443),
 		},
 	}
-	svc, err := client.CoreV1().Services(namespace).Create(svc)
+	svc, err := client.CoreV1().Services(namespace).Create(context.TODO(), svc, metav1.CreateOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -559,7 +596,7 @@ func createOauthService(client kubeclient.Interface, namespace string) error {
 			TargetPort: intstr.FromInt(6443),
 		},
 	}
-	svc, err := client.CoreV1().Services(namespace).Create(svc)
+	svc, err := client.CoreV1().Services(namespace).Create(context.TODO(), svc, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -571,17 +608,17 @@ func createPullSecret(client kubeclient.Interface, namespace, data string) error
 	secret.Name = "pull-secret"
 	secret.Data = map[string][]byte{".dockerconfigjson": []byte(data)}
 	secret.Type = corev1.SecretTypeDockerConfigJson
-	_, err := client.CoreV1().Secrets(namespace).Create(secret)
+	_, err := client.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 	retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		sa, err := client.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
+		sa, err := client.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), "default", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 		sa.ImagePullSecrets = append(sa.ImagePullSecrets, corev1.LocalObjectReference{Name: "pull-secret"})
-		_, err = client.CoreV1().ServiceAccounts(namespace).Update(sa)
+		_, err = client.CoreV1().ServiceAccounts(namespace).Update(context.TODO(), sa, metav1.UpdateOptions{})
 		return err
 	})
 	return nil
@@ -609,59 +646,34 @@ func generateTargetPullSecret(data []byte, fileName string) error {
 	return ioutil.WriteFile(fileName, configMapBytes, 0644)
 }
 
-func getPullSecret(client kubeclient.Interface) (string, error) {
-	secret, err := client.CoreV1().Secrets("openshift-config").Get("pull-secret", metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	pullSecret, ok := secret.Data[".dockerconfigjson"]
-	if !ok {
-		return "", fmt.Errorf("did not find pull secret data in secret")
-	}
-	return string(pullSecret), nil
-}
-
-func getSSHPublicKey(client dynamic.Interface) ([]byte, error) {
-	machineConfigGroupVersion, err := schema.ParseGroupVersion("machineconfiguration.openshift.io/v1")
-	if err != nil {
-		return nil, err
-	}
-	machineConfigGroupVersionResource := machineConfigGroupVersion.WithResource("machineconfigs")
-	obj, err := client.Resource(machineConfigGroupVersionResource).Get("99-master-ssh", metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	obj.GetName()
-	users, exists, err := unstructured.NestedSlice(obj.Object, "spec", "config", "passwd", "users")
-	if !exists || err != nil {
-		return nil, fmt.Errorf("could not find users slice in ssh machine config: %v", err)
-	}
-	keys, exists, err := unstructured.NestedStringSlice(users[0].(map[string]interface{}), "sshAuthorizedKeys")
-	if !exists || err != nil {
-		return nil, fmt.Errorf("could not find authorized keys for machine config: %v", err)
-	}
-	return []byte(keys[0]), nil
-}
-
-func getInfrastructureInfo(client dynamic.Interface) (string, string, error) {
+func getInfrastructureInfo(client dynamic.Interface) (string, string, string, error) {
 	infraGroupVersion, err := schema.ParseGroupVersion("config.openshift.io/v1")
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	infraGroupVersionResource := infraGroupVersion.WithResource("infrastructures")
-	obj, err := client.Resource(infraGroupVersionResource).Get("cluster", metav1.GetOptions{})
+	obj, err := client.Resource(infraGroupVersionResource).Get(context.TODO(), "cluster", metav1.GetOptions{})
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	infraName, exists, err := unstructured.NestedString(obj.Object, "status", "infrastructureName")
 	if !exists || err != nil {
-		return "", "", fmt.Errorf("could not find the infrastructure name in the infrastructure resource: %v", err)
+		return "", "", "", fmt.Errorf("could not find the infrastructure name in the infrastructure resource: %v", err)
 	}
-	platformType, _, err := unstructured.NestedString(obj.Object, "status", "platformType")
+	platformType, _, err := unstructured.NestedString(obj.Object, "status", "platform")
 	if err != nil {
-		return "", "", fmt.Errorf("could not obtain the platform type from the infrastructure resource: %v", err)
+		return "", "", "", fmt.Errorf("could not obtain the platform type from the infrastructure resource: %v", err)
 	}
-	return infraName, platformType, nil
+	region := ""
+	switch platformType {
+	case "AWS":
+		region, _, _ = unstructured.NestedString(obj.Object, "status", "platformStatus", "aws", "region")
+	case "GCP":
+		region, _, _ = unstructured.NestedString(obj.Object, "status", "platformStatus", "gcp", "region")
+	case "Azure":
+		region, _, _ = unstructured.NestedString(obj.Object, "status", "platformStatus", "azure", "resourceGroupName")
+	}
+	return infraName, platformType, region, nil
 }
 
 func getDNSZoneInfo(client dynamic.Interface) (string, string, string, error) {
@@ -670,7 +682,7 @@ func getDNSZoneInfo(client dynamic.Interface) (string, string, string, error) {
 		return "", "", "", err
 	}
 	dnsGroupVersionResource := configGroupVersion.WithResource("dnses")
-	obj, err := client.Resource(dnsGroupVersionResource).Get("cluster", metav1.GetOptions{})
+	obj, err := client.Resource(dnsGroupVersionResource).Get(context.TODO(), "cluster", metav1.GetOptions{})
 	if err != nil {
 		return "", "", "", err
 	}
@@ -711,7 +723,7 @@ func getReleaseImage(client dynamic.Interface) (string, error) {
 		return "", err
 	}
 	clusterVersionGVR := configGroupVersion.WithResource("clusterversions")
-	obj, err := client.Resource(clusterVersionGVR).Get("version", metav1.GetOptions{})
+	obj, err := client.Resource(clusterVersionGVR).Get(context.TODO(), "version", metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -722,40 +734,13 @@ func getReleaseImage(client dynamic.Interface) (string, error) {
 	return releaseImage, nil
 }
 
-func getNetworkInfo(client dynamic.Interface) (string, string, error) {
-	configGroupVersion, err := schema.ParseGroupVersion("config.openshift.io/v1")
-	if err != nil {
-		return "", "", err
-	}
-	networkGroupVersionResource := configGroupVersion.WithResource("networks")
-	obj, err := client.Resource(networkGroupVersionResource).Get("cluster", metav1.GetOptions{})
-	if err != nil {
-		return "", "", err
-	}
-	serviceNetworks, exists, err := unstructured.NestedSlice(obj.Object, "status", "serviceNetwork")
-	if !exists || err != nil || len(serviceNetworks) == 0 {
-		return "", "", fmt.Errorf("could not find service networks in the network status: %v", err)
-	}
-	serviceCIDR := serviceNetworks[0].(string)
-
-	podNetworks, exists, err := unstructured.NestedSlice(obj.Object, "status", "clusterNetwork")
-	if !exists || err != nil || len(podNetworks) == 0 {
-		return "", "", fmt.Errorf("could not find cluster networks in the network status: %v", err)
-	}
-	podCIDR, exists, err := unstructured.NestedString(podNetworks[0].(map[string]interface{}), "cidr")
-	if !exists || err != nil {
-		return "", "", fmt.Errorf("cannot find cluster network cidr: %v", err)
-	}
-	return serviceCIDR, podCIDR, nil
-}
-
 func generateWorkerMachineset(client dynamic.Interface, infraName, namespace, fileName string) error {
 	machineGV, err := schema.ParseGroupVersion("machine.openshift.io/v1beta1")
 	if err != nil {
 		return err
 	}
 	machineSetGVR := machineGV.WithResource("machinesets")
-	machineSets, err := client.Resource(machineSetGVR).Namespace("openshift-machine-api").List(metav1.ListOptions{})
+	machineSets, err := client.Resource(machineSetGVR).Namespace("openshift-machine-api").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -825,7 +810,7 @@ func copyFile(src, dest string) error {
 }
 
 func ensureVPNSCC(securityClient securityclient.Interface, namespace string) error {
-	scc, err := securityClient.SecurityV1().SecurityContextConstraints().Get("privileged", metav1.GetOptions{})
+	scc, err := securityClient.SecurityV1().SecurityContextConstraints().Get(context.TODO(), "privileged", metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error fetching privileged scc: %v", err)
 	}
@@ -836,7 +821,7 @@ func ensureVPNSCC(securityClient securityclient.Interface, namespace string) err
 	}
 	userSet.Insert(svcAccount)
 	scc.Users = userSet.List()
-	_, err = securityClient.SecurityV1().SecurityContextConstraints().Update(scc)
+	_, err = securityClient.SecurityV1().SecurityContextConstraints().Update(context.TODO(), scc, metav1.UpdateOptions{})
 	return err
 }
 
@@ -899,7 +884,7 @@ func generateKubeconfigSecret(kubeconfigFile, manifestFilename string) error {
 }
 
 func updateOAuthDeployment(client kubeclient.Interface, namespace string) error {
-	d, err := client.AppsV1().Deployments(namespace).Get("oauth-openshift", metav1.GetOptions{})
+	d, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), "oauth-openshift", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -909,7 +894,7 @@ func updateOAuthDeployment(client kubeclient.Interface, namespace string) error 
 	}
 	annotations["deployment-refresh"] = fmt.Sprintf("%v", time.Now())
 	d.Spec.Template.ObjectMeta.Annotations = annotations
-	_, err = client.AppsV1().Deployments(namespace).Update(d)
+	_, err = client.AppsV1().Deployments(namespace).Update(context.TODO(), d, metav1.UpdateOptions{})
 	return err
 }
 
@@ -919,12 +904,12 @@ func createIngressController(client operatorclient.Interface, name string, paren
 	if err != nil {
 		return err
 	}
-	_, err = client.OperatorV1().IngressControllers(ingressOperatorNamespace).Get(name, metav1.GetOptions{})
+	_, err = client.OperatorV1().IngressControllers(ingressOperatorNamespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err == nil {
-		client.OperatorV1().IngressControllers(ingressOperatorNamespace).Delete(name, &metav1.DeleteOptions{})
+		client.OperatorV1().IngressControllers(ingressOperatorNamespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
 
 	}
-	if !errors.IsNotFound(err) {
+	if !apierrors.IsNotFound(err) {
 		return fmt.Errorf("unexpected error fetching existing ingress controller: %v", err)
 	}
 	ic := &operatorv1.IngressController{
@@ -941,7 +926,7 @@ func createIngressController(client operatorclient.Interface, name string, paren
 			},
 		},
 	}
-	_, err = client.OperatorV1().IngressControllers(ingressOperatorNamespace).Create(ic)
+	_, err = client.OperatorV1().IngressControllers(ingressOperatorNamespace).Create(context.TODO(), ic, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to create ingress controller for %s: %v", name, err)
 	}
@@ -949,7 +934,7 @@ func createIngressController(client operatorclient.Interface, name string, paren
 }
 
 func ensureDefaultIngressControllerSelector(client operatorclient.Interface) error {
-	defaultIC, err := client.OperatorV1().IngressControllers(ingressOperatorNamespace).Get("default", metav1.GetOptions{})
+	defaultIC, err := client.OperatorV1().IngressControllers(ingressOperatorNamespace).Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("cannot fetch default ingress controller: %v", err)
 	}
@@ -970,7 +955,7 @@ func ensureDefaultIngressControllerSelector(client operatorclient.Interface) err
 			Operator: metav1.LabelSelectorOpDoesNotExist,
 		})
 		defaultIC.Spec.RouteSelector = routeSelector
-		_, err = client.OperatorV1().IngressControllers(ingressOperatorNamespace).Update(defaultIC)
+		_, err = client.OperatorV1().IngressControllers(ingressOperatorNamespace).Update(context.TODO(), defaultIC, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("cannot update default ingress controller: %v", err)
 		}
@@ -1087,4 +1072,24 @@ func hash(s string) string {
 	intHash := hash.Sum32()
 	result := fmt.Sprintf("%08x", intHash)
 	return result
+}
+
+func getProvider(config *installertypes.InstallConfig) string {
+	switch {
+	case config.Platform.AWS != nil:
+		return "AWS"
+	case config.Platform.GCP != nil:
+		return "GCP"
+	case config.Platform.Azure != nil:
+		return "Azure"
+	default:
+		return "None"
+	}
+}
+
+func getROKSBinary() (string, error) {
+	if os.Getenv("IBM_ROKS") != "" {
+		return os.Getenv("IBM_ROKS"), nil
+	}
+	return exec.LookPath("ibm-roks")
 }

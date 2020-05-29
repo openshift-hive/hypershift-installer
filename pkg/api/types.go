@@ -2,12 +2,12 @@ package api
 
 type ClusterParams struct {
 	Namespace                           string                 `json:"namespace"`
+	ExternalAPIDNSName                  string                 `json:"externalAPIDNSName"`
 	ExternalAPIAddress                  string                 `json:"externalAPIAddress"`
 	ExternalAPIPort                     uint                   `json:"externalAPIPort"`
-	ExternalAPIIPAddress                string                 `json:"externalAPIIPAddress"`
 	ExternalOpenVPNAddress              string                 `json:"externalVPNAddress"`
 	ExternalOpenVPNPort                 uint                   `json:"externalVPNPort"`
-	ExternalOAuthAddress                string                 `json:"externalOAuthAddress"`
+	ExternalOauthDNSName                string                 `json:"externalOauthDNSName"`
 	ExternalOauthPort                   uint                   `json:"externalOauthPort"`
 	IdentityProviders                   string                 `json:"identityProviders"`
 	ServiceCIDR                         string                 `json:"serviceCIDR"`
@@ -48,8 +48,11 @@ type ClusterParams struct {
 	ExtraFeatureGates                   []string               `json:"extraFeatureGates"`
 	ControlPlaneOperatorSecurity        string                 `json:"controlPlaneOperatorSecurity"`
 	ApiserverLivenessPath               string                 `json:"apiserverLivenessPath"`
+	PlatformType                        string                 `json:"platformType"`
+	HypershiftOperatorImage             string                 `json:"hypershiftOperatorImage"`
+	HypershiftOperatorResources         []ResourceRequirements `json:"hypershiftOperatorResourceRequirements"`
+	HypershiftOperatorControllers       []string               `json:"hypershiftOperatorControllers"`
 	DefaultFeatureGates                 []string
-	PlatformType                        string `json:"platformType"`
 }
 
 type NamedCert struct {
