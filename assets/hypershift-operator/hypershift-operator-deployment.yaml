@@ -1,0 +1,124 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+    name: hypershift-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hypershift-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - pods
+  verbs:
+  - get
+  - patch
+  - update
+  - create
+  - list
+  - watch
+- apiGroups: ["extensions", "apps"]
+  resources:
+  - deployments
+  verbs:
+  - get
+  - patch
+  - update
+  - list
+  - watch
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  - routes/custom-host
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+  - update
+  - create
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hypershift-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hypershift-operator
+subjects:
+  - kind: ServiceAccount
+    name: hypershift-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hypershift-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hypershift-operator
+  template:
+    metadata:
+      labels:
+        app: hypershift-operator
+{{ if .RestartDate }}
+      annotations:
+        openshift.io/restartedAt: "{{ .RestartDate }}"
+{{ end }}
+    spec:
+      tolerations:
+        - key: "multi-az-worker"
+          operator: "Equal"
+          value: "true"
+          effect: NoSchedule
+      containers:
+      - image: {{ .HypershiftOperatorImage }}
+        imagePullPolicy: IfNotPresent
+        name: hypershift-operator
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: OPENSHIFT_RELEASE_VERSION
+          value: {{ version "release" }}
+        - name: KUBERNETES_VERSION
+          value: {{ version "kubernetes" }}
+        command:
+        - "/usr/bin/hypershift-operator"
+        - "--initial-ca-file=/etc/kubernetes/config/initial-ca.crt"
+        - "--target-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig"
+        - "--namespace"
+        - "$(POD_NAMESPACE)"{{range $controller := .HypershiftOperatorControllers }}
+        - "--controllers={{$controller}}"{{end}}
+{{ if .HypershiftOperatorResources }}
+        resources:{{ range .HypershiftOperatorResources }}{{ range .ResourceRequest }}
+          requests: {{ if .CPU }}
+            cpu: {{ .CPU }}{{ end }}{{ if .Memory }}
+            memory: {{ .Memory }}{{ end }}{{ end }}{{ range .ResourceLimit }}
+          limits: {{ if .CPU }}
+            cpu: {{ .CPU }}{{ end }}{{ if .Memory }}
+            memory: {{ .Memory }}{{ end }}{{ end }}{{ end }}
+{{ end }}
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: kubeconfig
+        - mountPath: /etc/kubernetes/config
+          name: config
+      restartPolicy: Always
+      serviceAccountName: hypershift-operator
+      volumes:
+      - name: kubeconfig
+        secret:
+          secretName: service-network-admin-kubeconfig
+      - name: config
+        configMap:
+          name: hypershift-operator

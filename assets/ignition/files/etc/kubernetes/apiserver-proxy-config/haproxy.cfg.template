@@ -12,9 +12,9 @@ defaults
   retries 3
 
 frontend local_apiserver
-  bind {{ .ExternalAPIIPAddress }}:6443
+  bind {{ .ExternalAPIAddress }}:6443
   default_backend remote_apiserver
 
 backend remote_apiserver
   mode tcp
-  server controlplane {{ .ExternalAPIAddress }}:{{ .ExternalAPIPort }}
+  server controlplane {{ .ExternalAPIDNSName }}:{{ .ExternalAPIPort }}

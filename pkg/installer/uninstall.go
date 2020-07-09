@@ -1,6 +1,7 @@
 package installer
 
 import (
+	"context"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ func UninstallCluster(name string) error {
 		return fmt.Errorf("cannot obtain dynamic client: %v", err)
 	}
 
-	infraName, _, err := getInfrastructureInfo(dynamicClient)
+	infraName, _, _, err := getInfrastructureInfo(dynamicClient)
 	if err != nil {
 		return fmt.Errorf("failed to obtain infrastructure info for cluster: %v", err)
 	}
@@ -56,7 +57,7 @@ func UninstallCluster(name string) error {
 	}
 
 	log.Info("Removing cluster namespace")
-	if err = client.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err = client.CoreV1().Namespaces().Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
 		if !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete namespace %s: %v", name, err)
 		}
@@ -72,7 +73,7 @@ func removeWorkerMachineset(client dynamic.Interface, infraName, namespace strin
 		return err
 	}
 	machineSetGVR := machineGV.WithResource("machinesets")
-	err = client.Resource(machineSetGVR).Namespace("openshift-machine-api").Delete(name, &metav1.DeleteOptions{})
+	err = client.Resource(machineSetGVR).Namespace("openshift-machine-api").Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if errors.IsNotFound(err) {
 		return nil
 	}
@@ -80,7 +81,7 @@ func removeWorkerMachineset(client dynamic.Interface, infraName, namespace strin
 }
 
 func removeIngressController(client operatorclient.Interface, name string) error {
-	err := client.OperatorV1().IngressControllers(ingressOperatorNamespace).Delete(name, &metav1.DeleteOptions{})
+	err := client.OperatorV1().IngressControllers(ingressOperatorNamespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if err == nil || errors.IsNotFound(err) {
 		return nil
 	}

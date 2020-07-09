@@ -19,7 +19,7 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 		ca("openvpn-ca", "openvpn-ca", "openshift"),
 	}
 
-	externalAPIServerAddress := fmt.Sprintf("https://%s:%d", params.ExternalAPIAddress, params.ExternalAPIPort)
+	externalAPIServerAddress := fmt.Sprintf("https://%s:%d", params.ExternalAPIDNSName, params.ExternalAPIPort)
 	internalAPIServerAddress := fmt.Sprintf("https://kube-apiserver:%d", params.InternalAPIPort)
 	kubeconfigs := []kubeconfigSpec{
 		kubeconfig("admin", externalAPIServerAddress, "root-ca", "system:admin", "system:masters"),
@@ -42,18 +42,18 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 	}
 	apiServerIPs := []string{
 		kubeIP.String(),
-		params.ExternalAPIIPAddress,
+		params.ExternalAPIAddress,
 	}
-	if isNumericIP(params.ExternalAPIAddress) {
-		apiServerIPs = append(apiServerIPs, params.ExternalAPIAddress)
+	if isNumericIP(params.ExternalAPIDNSName) {
+		apiServerIPs = append(apiServerIPs, params.ExternalAPIDNSName)
 	} else {
-		apiServerHostNames = append(apiServerHostNames, params.ExternalAPIAddress)
+		apiServerHostNames = append(apiServerHostNames, params.ExternalAPIDNSName)
 	}
 	var ingressNumericIPs, ingressHostNames []string
-	if isNumericIP(params.ExternalOAuthAddress) {
-		ingressNumericIPs = append(ingressNumericIPs, params.ExternalOAuthAddress)
+	if isNumericIP(params.ExternalOauthDNSName) {
+		ingressNumericIPs = append(ingressNumericIPs, params.ExternalOauthDNSName)
 	} else {
-		ingressHostNames = append(ingressHostNames, params.ExternalOAuthAddress)
+		ingressHostNames = append(ingressHostNames, params.ExternalOauthDNSName)
 	}
 	ingressHostNames = append(ingressHostNames, fmt.Sprintf("*.%s", params.IngressSubdomain))
 

@@ -42,6 +42,7 @@ func (c *pkiRenderContext) setupManifests(etcd bool, vpn bool, externalOauth boo
 		c.openVPN()
 	}
 	c.routerProxy()
+	c.hypershiftOperator()
 }
 
 func (c *pkiRenderContext) etcd() {
@@ -111,6 +112,12 @@ func (c *pkiRenderContext) openshiftControllerManager() {
 func (c *pkiRenderContext) controlPlaneOperator() {
 	c.addManifestFiles(
 		"control-plane-operator/cp-operator-configmap.yaml",
+	)
+}
+
+func (c *pkiRenderContext) hypershiftOperator() {
+	c.addManifestFiles(
+		"hypershift-operator/hypershift-operator-configmap.yaml",
 	)
 }
 
