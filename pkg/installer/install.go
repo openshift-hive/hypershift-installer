@@ -53,8 +53,7 @@ import (
 )
 
 const (
-	externalOauthPort     = 8443
-	workerMachineSetCount = 3
+	externalOauthPort = 8443
 
 	defaultControlPlaneOperatorImage = "registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-4.4:control-plane-operator"
 	defaultHypershiftOperatorImage   = "quay.io/hypershift/hypershift-operator:latest"
@@ -353,6 +352,10 @@ func (o *CreateClusterOpts) Run() error {
 	if err = render.RenderClusterManifests(params, pullSecretFile, pkiDir, manifestsDir, true, true, true, true); err != nil {
 		return fmt.Errorf("failed to render manifests for cluster: %v", err)
 	}
+	workerCount := 3
+	if len(config.Compute) > 0 && config.Compute[0].Replicas != nil {
+		workerCount = int(*config.Compute[0].Replicas)
+	}
 
 	if !o.DryRun {
 		infraName, _, _, err := getInfrastructureInfo(dynamicClient)
@@ -360,7 +363,7 @@ func (o *CreateClusterOpts) Run() error {
 			return errors.Wrap(err, "failed to get infrastructure information")
 		}
 		// Create a machineset for the new cluster's worker nodes
-		if err = generateWorkerMachineset(dynamicClient, infraName, name, filepath.Join(manifestsDir, "machineset.json")); err != nil {
+		if err = generateWorkerMachineset(dynamicClient, infraName, name, filepath.Join(manifestsDir, "machineset.json"), workerCount); err != nil {
 			return fmt.Errorf("failed to generate worker machineset: %v", err)
 		}
 	}
@@ -423,15 +426,19 @@ func (o *CreateClusterOpts) Run() error {
 			return fmt.Errorf("cannot create target cluster client: %v", err)
 		}
 
-		log.Infof("Waiting up to 10 minutes for nodes to be ready.")
-		if err = waitForNodesReady(targetClient, workerMachineSetCount); err != nil {
-			return fmt.Errorf("failed to wait for nodes ready: %v", err)
-		}
-		log.Infof("Nodes (%d) are ready", workerMachineSetCount)
+		if workerCount == 0 {
+			log.Info("No workers have been provisioned for this cluster yet.")
+		} else {
+			log.Infof("Waiting up to 10 minutes for nodes to be ready.")
+			if err = waitForNodesReady(targetClient, workerCount); err != nil {
+				return fmt.Errorf("failed to wait for nodes ready: %v", err)
+			}
+			log.Infof("Nodes (%d) are ready", workerCount)
 
-		log.Infof("Waiting up to 15 minutes for cluster operators to be ready.")
-		if err = waitForClusterOperators(targetClusterCfg); err != nil {
-			return fmt.Errorf("failed to wait for cluster operators: %v", err)
+			log.Infof("Waiting up to 15 minutes for cluster operators to be ready.")
+			if err = waitForClusterOperators(targetClusterCfg); err != nil {
+				return fmt.Errorf("failed to wait for cluster operators: %v", err)
+			}
 		}
 	}
 
@@ -734,7 +741,7 @@ func getReleaseImage(client dynamic.Interface) (string, error) {
 	return releaseImage, nil
 }
 
-func generateWorkerMachineset(client dynamic.Interface, infraName, namespace, fileName string) error {
+func generateWorkerMachineset(client dynamic.Interface, infraName, namespace, fileName string, workerCount int) error {
 	machineGV, err := schema.ParseGroupVersion("machine.openshift.io/v1beta1")
 	if err != nil {
 		return err
@@ -760,7 +767,7 @@ func generateWorkerMachineset(client dynamic.Interface, infraName, namespace, fi
 	unstructured.RemoveNestedField(object, "metadata", "uid")
 	unstructured.RemoveNestedField(object, "spec", "template", "spec", "metadata")
 	unstructured.RemoveNestedField(object, "spec", "template", "spec", "providerSpec", "value", "publicIp")
-	unstructured.SetNestedField(object, int64(workerMachineSetCount), "spec", "replicas")
+	unstructured.SetNestedField(object, int64(workerCount), "spec", "replicas")
 	unstructured.SetNestedField(object, workerName, "metadata", "name")
 	unstructured.SetNestedField(object, workerName, "spec", "selector", "matchLabels", "machine.openshift.io/cluster-api-machineset")
 	unstructured.SetNestedField(object, workerName, "spec", "template", "metadata", "labels", "machine.openshift.io/cluster-api-machineset")
