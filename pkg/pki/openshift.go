@@ -97,6 +97,14 @@ func GeneratePKI(params *api.ClusterParams, outputDir string) error {
 				fmt.Sprintf("openshift-controller-manager.%s.svc.cluster.local", params.Namespace),
 			}, nil),
 
+		cert("machine-config-server", "root-ca", "machine-config-server", "openshift",
+			[]string{
+				"machine-config-server",
+				fmt.Sprintf("machine-config-server.%s.svc", params.Namespace),
+				fmt.Sprintf("machine-config-server.%s.svc.cluster.local", params.Namespace),
+				params.MachineConfigServerAddress,
+			}, nil),
+
 		// openvpn
 		cert("openvpn-server", "openvpn-ca", "server", "kubernetes",
 			[]string{
