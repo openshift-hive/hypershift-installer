@@ -1,5 +1,5 @@
 /bin
 *.vscode/*
 *.idea/*
-install-config.yaml
+/install-config.yaml
 /install-files
