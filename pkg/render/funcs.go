@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
+
+	"github.com/vincent-petithory/dataurl"
 )
 
 func includeVPNFunc(includeVPN bool) func() bool {
@@ -66,6 +68,19 @@ func includePKIFunc(pkiDir string) func(string, int) string {
 	}
 }
 
+func pullSecretBase64(file string) func() string {
+	return func() string {
+		if _, err := os.Stat(file); err != nil {
+			panic(err.Error())
+		}
+		b, err := ioutil.ReadFile(file)
+		if err != nil {
+			panic(err.Error())
+		}
+		return base64.StdEncoding.EncodeToString(b)
+	}
+}
+
 func base64Func(params interface{}, rc *renderContext) func(string) string {
 	return func(fileName string) string {
 		result, err := rc.substituteParams(params, fileName)
@@ -96,6 +111,16 @@ func includeFileFunc(params interface{}, rc *renderContext) func(string, int) st
 		}
 		includeFn := includeDataFunc()
 		return includeFn(result, indent)
+	}
+}
+
+func dataURLEncode(params interface{}, rc *renderContext) func(string) string {
+	return func(fileName string) string {
+		result, err := rc.substituteParams(params, fileName)
+		if err != nil {
+			panic(err.Error())
+		}
+		return dataurl.EncodeBytes([]byte(result))
 	}
 }
 

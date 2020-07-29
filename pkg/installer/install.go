@@ -248,12 +248,14 @@ func (o *CreateClusterOpts) Run() error {
 	params.IngressSubdomain = fmt.Sprintf("apps.%s", config.ClusterDomain())
 	params.OpenShiftAPIClusterIP = openshiftClusterIP
 	params.BaseDomain = config.ClusterDomain()
+	params.MachineConfigServerAddress = fmt.Sprintf("ignition-provider-%s.apps.%s", name, config.BaseDomain)
 	params.CloudProvider = getProvider(config)
 	params.InternalAPIPort = 6443
 	params.EtcdClientName = "etcd-client"
 	params.NetworkType = "OpenShiftSDN"
 	params.ImageRegistryHTTPSecret = generateImageRegistrySecret()
 	params.Replicas = "1"
+	params.SSHKey = config.SSHKey
 	cpOperatorImage := os.Getenv("CONTROL_PLANE_OPERATOR_IMAGE_OVERRIDE")
 	if cpOperatorImage == "" {
 		params.ControlPlaneOperatorImage = defaultControlPlaneOperatorImage
@@ -266,7 +268,7 @@ func (o *CreateClusterOpts) Run() error {
 	} else {
 		params.HypershiftOperatorImage = hypershiftOperatorImage
 	}
-	params.HypershiftOperatorControllers = []string{"route-sync", "auto-approver", "kubeadmin-password"}
+	params.HypershiftOperatorControllers = []string{"route-sync", "auto-approver", "kubeadmin-password", "node"}
 
 	workingDir := filepath.Join(o.Directory, "install-files")
 	if err = os.Mkdir(workingDir, 0755); err != nil {
@@ -304,15 +306,10 @@ func (o *CreateClusterOpts) Run() error {
 	if err = ioutil.WriteFile(pullSecretFile, []byte(config.PullSecret), 0644); err != nil {
 		return fmt.Errorf("failed to create temporary pull secret file: %v", err)
 	}
+
 	log.Info("Generating ignition for workers")
 	if err = ignition.GenerateIgnition(params, []byte(config.SSHKey), pullSecretFile, pkiDir, workingDir); err != nil {
 		return fmt.Errorf("cannot generate ignition file for workers: %v", err)
-	}
-
-	// Set up endpoint to serve up ignition
-	log.Info("Generating ignition services for workers")
-	if err := generateIgnitionServices(manifestsDir, filepath.Join(workingDir, "bootstrap.ign")); err != nil {
-		return fmt.Errorf("failed to generate ignition objects for workers")
 	}
 
 	log.Info("Rendering Manifests")
@@ -787,7 +784,7 @@ func generateUserDataSecret(namespace, hyperHostDomain, fileName string) error {
 	secret.Namespace = "openshift-machine-api"
 
 	disableTemplatingValue := []byte(base64.StdEncoding.EncodeToString([]byte("true")))
-	userDataValue := []byte(fmt.Sprintf(`{"ignition":{"config":{"append":[{"source":"http://ignition-provider-%s.apps.%s/worker.ign","verification":{}}]},"security":{},"timeouts":{},"version":"2.2.0"},"networkd":{},"passwd":{},"storage":{},"systemd":{}}`, namespace, hyperHostDomain))
+	userDataValue := []byte(fmt.Sprintf(`{"ignition":{"config":{"append":[{"source":"http://ignition-provider-%s.apps.%s/config/master","verification":{}}]},"security":{},"timeouts":{},"version":"2.2.0"},"networkd":{},"passwd":{},"storage":{},"systemd":{}}`, namespace, hyperHostDomain))
 
 	secret.Data = map[string][]byte{
 		"disableTemplating": disableTemplatingValue,

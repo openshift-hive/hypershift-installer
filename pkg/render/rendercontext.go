@@ -95,9 +95,13 @@ func (c *renderContext) addManifest(name, content string) {
 }
 
 func (c *renderContext) substituteParams(data interface{}, fileName string) (string, error) {
-	out := &bytes.Buffer{}
 	asset := assets.MustAsset(fileName)
-	t := template.Must(template.New("template").Funcs(c.funcs).Parse(string(asset)))
+	return c.substituteParamsInString(data, string(asset))
+}
+
+func (c *renderContext) substituteParamsInString(data interface{}, fileContent string) (string, error) {
+	out := &bytes.Buffer{}
+	t := template.Must(template.New("template").Funcs(c.funcs).Parse(fileContent))
 	err := t.Execute(out, data)
 	if err != nil {
 		panic(err.Error())

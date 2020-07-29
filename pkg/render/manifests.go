@@ -1,6 +1,7 @@
 package render
 
 import (
+	"fmt"
 	"path"
 	"strings"
 	"text/template"
@@ -16,7 +17,7 @@ func RenderClusterManifests(params *api.ClusterParams, pullSecretFile, pkiDir, o
 	if err != nil {
 		return err
 	}
-	ctx := newClusterManifestContext(releaseInfo.Images, releaseInfo.Versions, params, pkiDir, outputDir, vpn)
+	ctx := newClusterManifestContext(releaseInfo.Images, releaseInfo.Versions, params, pkiDir, outputDir, vpn, pullSecretFile)
 	ctx.setupManifests(etcd, vpn, externalOauth, includeRegistry)
 	return ctx.renderManifests()
 }
@@ -27,7 +28,7 @@ type clusterManifestContext struct {
 	userManifests     map[string]string
 }
 
-func newClusterManifestContext(images, versions map[string]string, params interface{}, pkiDir, outputDir string, includeVPN bool) *clusterManifestContext {
+func newClusterManifestContext(images, versions map[string]string, params interface{}, pkiDir, outputDir string, includeVPN bool, pullSecretFile string) *clusterManifestContext {
 	ctx := &clusterManifestContext{
 		renderContext: newRenderContext(params, outputDir),
 		userManifests: make(map[string]string),
@@ -41,10 +42,13 @@ func newClusterManifestContext(images, versions map[string]string, params interf
 		"mask":              cidrMask,
 		"include":           includeFileFunc(params, ctx.renderContext),
 		"includeVPN":        includeVPNFunc(includeVPN),
+		"dataURLEncode":     dataURLEncode(params, ctx.renderContext),
 		"randomString":      randomString,
 		"includeData":       includeDataFunc(),
 		"trimTrailingSpace": trimTrailingSpace,
 		"pki":               pkiFunc(pkiDir),
+		"include_pki":       includePKIFunc(pkiDir),
+		"pullSecretBase64":  pullSecretBase64(pullSecretFile),
 	})
 	return ctx
 }
@@ -67,6 +71,8 @@ func (c *clusterManifestContext) setupManifests(etcd bool, vpn bool, externalOau
 	c.userManifestsBootstrapper()
 	c.routerProxy()
 	c.hypershiftOperator()
+	c.machineConfigServer()
+	c.ignitionConfigs()
 }
 
 func (c *clusterManifestContext) etcd() {
@@ -107,6 +113,13 @@ func (c *clusterManifestContext) clusterBootstrap() {
 	for _, m := range manifests {
 		c.addUserManifestFiles("cluster-bootstrap/" + m)
 	}
+}
+
+func (c *clusterManifestContext) machineConfigServer() {
+	c.addManifestFiles("machine-config-server/machine-config-server-configmap.yaml")
+	c.addManifestFiles("machine-config-server/machine-config-server-deployment.yaml")
+	c.addManifestFiles("machine-config-server/machine-config-server-service.yaml")
+	c.addManifestFiles("machine-config-server/machine-config-server-route.yaml")
 }
 
 func (c *clusterManifestContext) openVPN() {
@@ -169,6 +182,40 @@ func (c *clusterManifestContext) userManifestsBootstrapper() {
 			panic(err.Error())
 		}
 		c.addManifest("user-manifest-"+name, manifest)
+	}
+}
+
+const ignitionConfigTemplate = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}
+  labels:
+    ignition-config: "true"
+data:
+  data: |-
+{{ indent 4 .content }}
+`
+
+func (c *clusterManifestContext) ignitionConfigs() {
+	manifests, err := assets.AssetDir("ignition-configs")
+	if err != nil {
+		panic(err.Error())
+	}
+	for _, m := range manifests {
+		content, err := c.substituteParams(c.params, "ignition-configs/"+m)
+		if err != nil {
+			panic(err)
+		}
+		name := fmt.Sprintf("ignition-config-%s", strings.TrimSuffix(m, ".yaml"))
+		params := map[string]string{
+			"name":    name,
+			"content": content,
+		}
+		cm, err := c.substituteParamsInString(params, ignitionConfigTemplate)
+		if err != nil {
+			panic(err)
+		}
+		c.addManifest(name+".yaml", cm)
 	}
 }
 

@@ -1,0 +1,10 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ignition-provider
+spec:
+  to:
+    kind: Service
+    name: machine-config-server
+    weight: 100
+  wildcardPolicy: None

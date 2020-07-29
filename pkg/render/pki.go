@@ -43,6 +43,7 @@ func (c *pkiRenderContext) setupManifests(etcd bool, vpn bool, externalOauth boo
 	}
 	c.routerProxy()
 	c.hypershiftOperator()
+	c.machineConfigServer()
 }
 
 func (c *pkiRenderContext) etcd() {
@@ -137,5 +138,12 @@ func (c *pkiRenderContext) serviceAdminKubeconfig() {
 func (c *pkiRenderContext) routerProxy() {
 	c.addManifestFiles(
 		"router-proxy/router-proxy-vpnclient-secret.yaml",
+	)
+}
+
+func (c *pkiRenderContext) machineConfigServer() {
+	c.addManifestFiles(
+		"machine-config-server/machine-config-server-secret.yaml",
+		"machine-config-server/machine-config-server-kubeconfig-secret.yaml",
 	)
 }
