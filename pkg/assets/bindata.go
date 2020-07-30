@@ -6,8 +6,6 @@
 // assets/apiserver-haproxy/setup-apiserver-ip.sh
 // assets/apiserver-haproxy/teardown-apiserver-ip.sh
 // assets/cluster-bootstrap/cluster-ingresscontrollers-02-config.yaml
-// assets/cluster-bootstrap/namespace-security-allocation-controller-clusterrole.yaml
-// assets/cluster-bootstrap/namespace-security-allocation-controller-clusterrolebinding.yaml
 // assets/common/service-network-admin-kubeconfig-secret.yaml
 // assets/control-plane-operator/cp-operator-configmap.yaml
 // assets/etcd/etcd-cluster-crd.yaml
@@ -302,89 +300,6 @@ func clusterBootstrapClusterIngresscontrollers02ConfigYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "cluster-bootstrap/cluster-ingresscontrollers-02-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _clusterBootstrapNamespaceSecurityAllocationControllerClusterroleYaml = []byte(`apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  annotations:
-    rbac.authorization.kubernetes.io/autoupdate: "true"
-  creationTimestamp: null
-  name: system:openshift:controller:namespace-security-allocation-controller
-rules:
-- apiGroups:
-  - security.openshift.io
-  resources:
-  - rangeallocations
-  verbs:
-  - create
-  - get
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
-  - get
-  - list
-  - update
-  - watch
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
-  - update
-`)
-
-func clusterBootstrapNamespaceSecurityAllocationControllerClusterroleYamlBytes() ([]byte, error) {
-	return _clusterBootstrapNamespaceSecurityAllocationControllerClusterroleYaml, nil
-}
-
-func clusterBootstrapNamespaceSecurityAllocationControllerClusterroleYaml() (*asset, error) {
-	bytes, err := clusterBootstrapNamespaceSecurityAllocationControllerClusterroleYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "cluster-bootstrap/namespace-security-allocation-controller-clusterrole.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _clusterBootstrapNamespaceSecurityAllocationControllerClusterrolebindingYaml = []byte(`apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  annotations:
-    rbac.authorization.kubernetes.io/autoupdate: "true"
-  creationTimestamp: null
-  name: system:openshift:controller:namespace-security-allocation-controller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:openshift:controller:namespace-security-allocation-controller
-subjects:
-- kind: ServiceAccount
-  name: namespace-security-allocation-controller
-  namespace: openshift-infra
-`)
-
-func clusterBootstrapNamespaceSecurityAllocationControllerClusterrolebindingYamlBytes() ([]byte, error) {
-	return _clusterBootstrapNamespaceSecurityAllocationControllerClusterrolebindingYaml, nil
-}
-
-func clusterBootstrapNamespaceSecurityAllocationControllerClusterrolebindingYaml() (*asset, error) {
-	bytes, err := clusterBootstrapNamespaceSecurityAllocationControllerClusterrolebindingYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "cluster-bootstrap/namespace-security-allocation-controller-clusterrolebinding.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3018,82 +2933,80 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"apiserver-haproxy/apiserver-ip.service":                                             apiserverHaproxyApiserverIpService,
-	"apiserver-haproxy/haproxy.cfg":                                                      apiserverHaproxyHaproxyCfg,
-	"apiserver-haproxy/kube-apiserver-proxy.yaml":                                        apiserverHaproxyKubeApiserverProxyYaml,
-	"apiserver-haproxy/setup-apiserver-ip.sh":                                            apiserverHaproxySetupApiserverIpSh,
-	"apiserver-haproxy/teardown-apiserver-ip.sh":                                         apiserverHaproxyTeardownApiserverIpSh,
-	"cluster-bootstrap/cluster-ingresscontrollers-02-config.yaml":                        clusterBootstrapClusterIngresscontrollers02ConfigYaml,
-	"cluster-bootstrap/namespace-security-allocation-controller-clusterrole.yaml":        clusterBootstrapNamespaceSecurityAllocationControllerClusterroleYaml,
-	"cluster-bootstrap/namespace-security-allocation-controller-clusterrolebinding.yaml": clusterBootstrapNamespaceSecurityAllocationControllerClusterrolebindingYaml,
-	"common/service-network-admin-kubeconfig-secret.yaml":                                commonServiceNetworkAdminKubeconfigSecretYaml,
-	"control-plane-operator/cp-operator-configmap.yaml":                                  controlPlaneOperatorCpOperatorConfigmapYaml,
-	"etcd/etcd-cluster-crd.yaml":                                                         etcdEtcdClusterCrdYaml,
-	"etcd/etcd-cluster.yaml":                                                             etcdEtcdClusterYaml,
-	"etcd/etcd-operator-cluster-role-binding.yaml":                                       etcdEtcdOperatorClusterRoleBindingYaml,
-	"etcd/etcd-operator-cluster-role.yaml":                                               etcdEtcdOperatorClusterRoleYaml,
-	"etcd/etcd-operator.yaml":                                                            etcdEtcdOperatorYaml,
-	"etcd/etcd-secret-template.yaml":                                                     etcdEtcdSecretTemplateYaml,
-	"hypershift-operator/hypershift-operator-configmap.yaml":                             hypershiftOperatorHypershiftOperatorConfigmapYaml,
-	"hypershift-operator/hypershift-operator-deployment.yaml":                            hypershiftOperatorHypershiftOperatorDeploymentYaml,
-	"ignition-configs/20-apiserver-haproxy.yaml":                                         ignitionConfigs20ApiserverHaproxyYaml,
-	"ignition-configs/99-worker-ssh.yaml":                                                ignitionConfigs99WorkerSshYaml,
-	"ignition-deployment.yaml":                                                           ignitionDeploymentYaml,
-	"ignition-route.yaml":                                                                ignitionRouteYaml,
-	"ignition-service.yaml":                                                              ignitionServiceYaml,
-	"kube-apiserver/client.conf":                                                         kubeApiserverClientConf,
-	"kube-apiserver/kube-apiserver-configmap.yaml":                                       kubeApiserverKubeApiserverConfigmapYaml,
-	"kube-apiserver/kube-apiserver-deployment-patch.yaml":                                kubeApiserverKubeApiserverDeploymentPatchYaml,
-	"kube-apiserver/kube-apiserver-secret.yaml":                                          kubeApiserverKubeApiserverSecretYaml,
-	"kube-apiserver/kube-apiserver-vpnclient-config.yaml":                                kubeApiserverKubeApiserverVpnclientConfigYaml,
-	"kube-apiserver/kube-apiserver-vpnclient-secret.yaml":                                kubeApiserverKubeApiserverVpnclientSecretYaml,
-	"kube-controller-manager/kube-controller-manager-configmap.yaml":                     kubeControllerManagerKubeControllerManagerConfigmapYaml,
-	"kube-controller-manager/kube-controller-manager-secret.yaml":                        kubeControllerManagerKubeControllerManagerSecretYaml,
-	"kube-scheduler/kube-scheduler-secret.yaml":                                          kubeSchedulerKubeSchedulerSecretYaml,
-	"machine-config-server/cluster-infrastructure-02-config.yaml":                        machineConfigServerClusterInfrastructure02ConfigYaml,
-	"machine-config-server/cluster-network-02-config.yaml":                               machineConfigServerClusterNetwork02ConfigYaml,
-	"machine-config-server/cluster-proxy-01-config.yaml":                                 machineConfigServerClusterProxy01ConfigYaml,
-	"machine-config-server/install-config.yaml":                                          machineConfigServerInstallConfigYaml,
-	"machine-config-server/machine-config-server-configmap.yaml":                         machineConfigServerMachineConfigServerConfigmapYaml,
-	"machine-config-server/machine-config-server-deployment.yaml":                        machineConfigServerMachineConfigServerDeploymentYaml,
-	"machine-config-server/machine-config-server-kubeconfig-secret.yaml":                 machineConfigServerMachineConfigServerKubeconfigSecretYaml,
-	"machine-config-server/machine-config-server-route.yaml":                             machineConfigServerMachineConfigServerRouteYaml,
-	"machine-config-server/machine-config-server-secret.yaml":                            machineConfigServerMachineConfigServerSecretYaml,
-	"machine-config-server/machine-config-server-service.yaml":                           machineConfigServerMachineConfigServerServiceYaml,
-	"machine-config-server/master.machineconfigpool.yaml":                                machineConfigServerMasterMachineconfigpoolYaml,
-	"machine-config-server/pull-secret.yaml":                                             machineConfigServerPullSecretYaml,
-	"machine-config-server/worker.machineconfigpool.yaml":                                machineConfigServerWorkerMachineconfigpoolYaml,
-	"oauth-openshift/ingress-certs-secret.yaml":                                          oauthOpenshiftIngressCertsSecretYaml,
-	"oauth-openshift/oauth-server-configmap.yaml":                                        oauthOpenshiftOauthServerConfigmapYaml,
-	"oauth-openshift/oauth-server-secret.yaml":                                           oauthOpenshiftOauthServerSecretYaml,
-	"openshift-apiserver/openshift-apiserver-configmap.yaml":                             openshiftApiserverOpenshiftApiserverConfigmapYaml,
-	"openshift-apiserver/openshift-apiserver-secret.yaml":                                openshiftApiserverOpenshiftApiserverSecretYaml,
-	"openshift-controller-manager/openshift-controller-manager-configmap.yaml":           openshiftControllerManagerOpenshiftControllerManagerConfigmapYaml,
-	"openshift-controller-manager/openshift-controller-manager-secret.yaml":              openshiftControllerManagerOpenshiftControllerManagerSecretYaml,
-	"openvpn/Dockerfile":                                                                 openvpnDockerfile,
-	"openvpn/client.conf":                                                                openvpnClientConf,
-	"openvpn/openvpn-ccd-configmap.yaml":                                                 openvpnOpenvpnCcdConfigmapYaml,
-	"openvpn/openvpn-client-configmap.yaml":                                              openvpnOpenvpnClientConfigmapYaml,
-	"openvpn/openvpn-client-deployment.yaml":                                             openvpnOpenvpnClientDeploymentYaml,
-	"openvpn/openvpn-client-secret.yaml":                                                 openvpnOpenvpnClientSecretYaml,
-	"openvpn/openvpn-server-configmap.yaml":                                              openvpnOpenvpnServerConfigmapYaml,
-	"openvpn/openvpn-server-deployment.yaml":                                             openvpnOpenvpnServerDeploymentYaml,
-	"openvpn/openvpn-server-secret.yaml":                                                 openvpnOpenvpnServerSecretYaml,
-	"openvpn/openvpn-server-service.yaml":                                                openvpnOpenvpnServerServiceYaml,
-	"openvpn/openvpn-serviceaccount.yaml":                                                openvpnOpenvpnServiceaccountYaml,
-	"openvpn/server.conf":                                                                openvpnServerConf,
-	"openvpn/worker":                                                                     openvpnWorker,
-	"registry/cluster-imageregistry-config.yaml":                                         registryClusterImageregistryConfigYaml,
-	"router-proxy/client.conf":                                                           routerProxyClientConf,
-	"router-proxy/haproxy.cfg":                                                           routerProxyHaproxyCfg,
-	"router-proxy/router-proxy-configmap.yaml":                                           routerProxyRouterProxyConfigmapYaml,
-	"router-proxy/router-proxy-deployment.yaml":                                          routerProxyRouterProxyDeploymentYaml,
-	"router-proxy/router-proxy-http-service.yaml":                                        routerProxyRouterProxyHttpServiceYaml,
-	"router-proxy/router-proxy-https-service.yaml":                                       routerProxyRouterProxyHttpsServiceYaml,
-	"router-proxy/router-proxy-vpnclient-configmap.yaml":                                 routerProxyRouterProxyVpnclientConfigmapYaml,
-	"router-proxy/router-proxy-vpnclient-secret.yaml":                                    routerProxyRouterProxyVpnclientSecretYaml,
-	"user-manifests-bootstrapper/user-manifest-template.yaml":                            userManifestsBootstrapperUserManifestTemplateYaml,
-	"user-manifests-bootstrapper/user-manifests-bootstrapper-pod.yaml":                   userManifestsBootstrapperUserManifestsBootstrapperPodYaml,
+	"apiserver-haproxy/apiserver-ip.service":                                   apiserverHaproxyApiserverIpService,
+	"apiserver-haproxy/haproxy.cfg":                                            apiserverHaproxyHaproxyCfg,
+	"apiserver-haproxy/kube-apiserver-proxy.yaml":                              apiserverHaproxyKubeApiserverProxyYaml,
+	"apiserver-haproxy/setup-apiserver-ip.sh":                                  apiserverHaproxySetupApiserverIpSh,
+	"apiserver-haproxy/teardown-apiserver-ip.sh":                               apiserverHaproxyTeardownApiserverIpSh,
+	"cluster-bootstrap/cluster-ingresscontrollers-02-config.yaml":              clusterBootstrapClusterIngresscontrollers02ConfigYaml,
+	"common/service-network-admin-kubeconfig-secret.yaml":                      commonServiceNetworkAdminKubeconfigSecretYaml,
+	"control-plane-operator/cp-operator-configmap.yaml":                        controlPlaneOperatorCpOperatorConfigmapYaml,
+	"etcd/etcd-cluster-crd.yaml":                                               etcdEtcdClusterCrdYaml,
+	"etcd/etcd-cluster.yaml":                                                   etcdEtcdClusterYaml,
+	"etcd/etcd-operator-cluster-role-binding.yaml":                             etcdEtcdOperatorClusterRoleBindingYaml,
+	"etcd/etcd-operator-cluster-role.yaml":                                     etcdEtcdOperatorClusterRoleYaml,
+	"etcd/etcd-operator.yaml":                                                  etcdEtcdOperatorYaml,
+	"etcd/etcd-secret-template.yaml":                                           etcdEtcdSecretTemplateYaml,
+	"hypershift-operator/hypershift-operator-configmap.yaml":                   hypershiftOperatorHypershiftOperatorConfigmapYaml,
+	"hypershift-operator/hypershift-operator-deployment.yaml":                  hypershiftOperatorHypershiftOperatorDeploymentYaml,
+	"ignition-configs/20-apiserver-haproxy.yaml":                               ignitionConfigs20ApiserverHaproxyYaml,
+	"ignition-configs/99-worker-ssh.yaml":                                      ignitionConfigs99WorkerSshYaml,
+	"ignition-deployment.yaml":                                                 ignitionDeploymentYaml,
+	"ignition-route.yaml":                                                      ignitionRouteYaml,
+	"ignition-service.yaml":                                                    ignitionServiceYaml,
+	"kube-apiserver/client.conf":                                               kubeApiserverClientConf,
+	"kube-apiserver/kube-apiserver-configmap.yaml":                             kubeApiserverKubeApiserverConfigmapYaml,
+	"kube-apiserver/kube-apiserver-deployment-patch.yaml":                      kubeApiserverKubeApiserverDeploymentPatchYaml,
+	"kube-apiserver/kube-apiserver-secret.yaml":                                kubeApiserverKubeApiserverSecretYaml,
+	"kube-apiserver/kube-apiserver-vpnclient-config.yaml":                      kubeApiserverKubeApiserverVpnclientConfigYaml,
+	"kube-apiserver/kube-apiserver-vpnclient-secret.yaml":                      kubeApiserverKubeApiserverVpnclientSecretYaml,
+	"kube-controller-manager/kube-controller-manager-configmap.yaml":           kubeControllerManagerKubeControllerManagerConfigmapYaml,
+	"kube-controller-manager/kube-controller-manager-secret.yaml":              kubeControllerManagerKubeControllerManagerSecretYaml,
+	"kube-scheduler/kube-scheduler-secret.yaml":                                kubeSchedulerKubeSchedulerSecretYaml,
+	"machine-config-server/cluster-infrastructure-02-config.yaml":              machineConfigServerClusterInfrastructure02ConfigYaml,
+	"machine-config-server/cluster-network-02-config.yaml":                     machineConfigServerClusterNetwork02ConfigYaml,
+	"machine-config-server/cluster-proxy-01-config.yaml":                       machineConfigServerClusterProxy01ConfigYaml,
+	"machine-config-server/install-config.yaml":                                machineConfigServerInstallConfigYaml,
+	"machine-config-server/machine-config-server-configmap.yaml":               machineConfigServerMachineConfigServerConfigmapYaml,
+	"machine-config-server/machine-config-server-deployment.yaml":              machineConfigServerMachineConfigServerDeploymentYaml,
+	"machine-config-server/machine-config-server-kubeconfig-secret.yaml":       machineConfigServerMachineConfigServerKubeconfigSecretYaml,
+	"machine-config-server/machine-config-server-route.yaml":                   machineConfigServerMachineConfigServerRouteYaml,
+	"machine-config-server/machine-config-server-secret.yaml":                  machineConfigServerMachineConfigServerSecretYaml,
+	"machine-config-server/machine-config-server-service.yaml":                 machineConfigServerMachineConfigServerServiceYaml,
+	"machine-config-server/master.machineconfigpool.yaml":                      machineConfigServerMasterMachineconfigpoolYaml,
+	"machine-config-server/pull-secret.yaml":                                   machineConfigServerPullSecretYaml,
+	"machine-config-server/worker.machineconfigpool.yaml":                      machineConfigServerWorkerMachineconfigpoolYaml,
+	"oauth-openshift/ingress-certs-secret.yaml":                                oauthOpenshiftIngressCertsSecretYaml,
+	"oauth-openshift/oauth-server-configmap.yaml":                              oauthOpenshiftOauthServerConfigmapYaml,
+	"oauth-openshift/oauth-server-secret.yaml":                                 oauthOpenshiftOauthServerSecretYaml,
+	"openshift-apiserver/openshift-apiserver-configmap.yaml":                   openshiftApiserverOpenshiftApiserverConfigmapYaml,
+	"openshift-apiserver/openshift-apiserver-secret.yaml":                      openshiftApiserverOpenshiftApiserverSecretYaml,
+	"openshift-controller-manager/openshift-controller-manager-configmap.yaml": openshiftControllerManagerOpenshiftControllerManagerConfigmapYaml,
+	"openshift-controller-manager/openshift-controller-manager-secret.yaml":    openshiftControllerManagerOpenshiftControllerManagerSecretYaml,
+	"openvpn/Dockerfile":                                                       openvpnDockerfile,
+	"openvpn/client.conf":                                                      openvpnClientConf,
+	"openvpn/openvpn-ccd-configmap.yaml":                                       openvpnOpenvpnCcdConfigmapYaml,
+	"openvpn/openvpn-client-configmap.yaml":                                    openvpnOpenvpnClientConfigmapYaml,
+	"openvpn/openvpn-client-deployment.yaml":                                   openvpnOpenvpnClientDeploymentYaml,
+	"openvpn/openvpn-client-secret.yaml":                                       openvpnOpenvpnClientSecretYaml,
+	"openvpn/openvpn-server-configmap.yaml":                                    openvpnOpenvpnServerConfigmapYaml,
+	"openvpn/openvpn-server-deployment.yaml":                                   openvpnOpenvpnServerDeploymentYaml,
+	"openvpn/openvpn-server-secret.yaml":                                       openvpnOpenvpnServerSecretYaml,
+	"openvpn/openvpn-server-service.yaml":                                      openvpnOpenvpnServerServiceYaml,
+	"openvpn/openvpn-serviceaccount.yaml":                                      openvpnOpenvpnServiceaccountYaml,
+	"openvpn/server.conf":                                                      openvpnServerConf,
+	"openvpn/worker":                                                           openvpnWorker,
+	"registry/cluster-imageregistry-config.yaml":                               registryClusterImageregistryConfigYaml,
+	"router-proxy/client.conf":                                                 routerProxyClientConf,
+	"router-proxy/haproxy.cfg":                                                 routerProxyHaproxyCfg,
+	"router-proxy/router-proxy-configmap.yaml":                                 routerProxyRouterProxyConfigmapYaml,
+	"router-proxy/router-proxy-deployment.yaml":                                routerProxyRouterProxyDeploymentYaml,
+	"router-proxy/router-proxy-http-service.yaml":                              routerProxyRouterProxyHttpServiceYaml,
+	"router-proxy/router-proxy-https-service.yaml":                             routerProxyRouterProxyHttpsServiceYaml,
+	"router-proxy/router-proxy-vpnclient-configmap.yaml":                       routerProxyRouterProxyVpnclientConfigmapYaml,
+	"router-proxy/router-proxy-vpnclient-secret.yaml":                          routerProxyRouterProxyVpnclientSecretYaml,
+	"user-manifests-bootstrapper/user-manifest-template.yaml":                  userManifestsBootstrapperUserManifestTemplateYaml,
+	"user-manifests-bootstrapper/user-manifests-bootstrapper-pod.yaml":         userManifestsBootstrapperUserManifestsBootstrapperPodYaml,
 }
 
 // AssetDir returns the file names below a certain
@@ -3145,9 +3058,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"teardown-apiserver-ip.sh":  {apiserverHaproxyTeardownApiserverIpSh, map[string]*bintree{}},
 	}},
 	"cluster-bootstrap": {nil, map[string]*bintree{
-		"cluster-ingresscontrollers-02-config.yaml":                        {clusterBootstrapClusterIngresscontrollers02ConfigYaml, map[string]*bintree{}},
-		"namespace-security-allocation-controller-clusterrole.yaml":        {clusterBootstrapNamespaceSecurityAllocationControllerClusterroleYaml, map[string]*bintree{}},
-		"namespace-security-allocation-controller-clusterrolebinding.yaml": {clusterBootstrapNamespaceSecurityAllocationControllerClusterrolebindingYaml, map[string]*bintree{}},
+		"cluster-ingresscontrollers-02-config.yaml": {clusterBootstrapClusterIngresscontrollers02ConfigYaml, map[string]*bintree{}},
 	}},
 	"common": {nil, map[string]*bintree{
 		"service-network-admin-kubeconfig-secret.yaml": {commonServiceNetworkAdminKubeconfigSecretYaml, map[string]*bintree{}},
