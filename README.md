@@ -8,7 +8,8 @@ The hypershift installer is a program for running OpenShift 4.x in a hyperscale 
 ### Build and run the installer
 
 * Install an Openshift 4.x cluster on AWS/GCP/Azure using the traditional installer
-* Obtain the latest 4.4 `ibm-roks` binary from [openshift/ibm-roks-toolkit releases](https://github.com/openshift/ibm-roks-toolkit/releases)
+* Obtain the latest `ibm-roks` binary from [openshift/ibm-roks-toolkit releases](https://github.com/openshift/ibm-roks-toolkit/releases)
+  that corresponds to the release of the cluster that you are creating (4.3, 4.4, 4.5, etc).
 * Ensure the `ibm-roks` binary is in your path.
 * Run `make` on this repository
 * Setup your KUBECONFIG to point to the admin kubeconfig of your current AWS cluster

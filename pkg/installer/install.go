@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
@@ -55,8 +56,7 @@ import (
 const (
 	externalOauthPort = 8443
 
-	defaultControlPlaneOperatorImage = "registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-4.4:control-plane-operator"
-	defaultHypershiftOperatorImage   = "quay.io/hypershift/hypershift-operator:latest"
+	defaultHypershiftOperatorImage = "quay.io/hypershift/hypershift-operator:latest"
 
 	DefaultAPIServerIPAddress = "172.20.0.1"
 
@@ -81,6 +81,8 @@ var (
 	ignitionDeploymentBytes = assets.MustAsset("ignition-deployment.yaml")
 	ignitionServiceBytes    = assets.MustAsset("ignition-service.yaml")
 	ignitionRouteBytes      = assets.MustAsset("ignition-route.yaml")
+
+	version46 = semver.MustParse("4.6.0")
 )
 
 func init() {
@@ -232,6 +234,29 @@ func (o *CreateClusterOpts) Run() error {
 		}
 		log.Debugf("VPN address from Service Load Balancer: %s", vpnAddress)
 	}
+	workingDir := filepath.Join(o.Directory, "install-files")
+	if err = os.Mkdir(workingDir, 0755); err != nil {
+		if os.IsExist(err) {
+			if err = os.RemoveAll(workingDir); err != nil {
+				return err
+			}
+			if err = os.Mkdir(workingDir, 0755); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+	log.Infof("The working directory is %s", workingDir)
+	pullSecretFile := filepath.Join(workingDir, "pull-secret")
+	if err = ioutil.WriteFile(pullSecretFile, []byte(config.PullSecret), 0644); err != nil {
+		return fmt.Errorf("failed to create temporary pull secret file: %v", err)
+	}
+	releaseVersion, err := render.ReleaseVersion(releaseImage, pullSecretFile)
+	version, err := semver.Parse(releaseVersion)
+	if err != nil {
+		return fmt.Errorf("cannot parse release version (%s): %v", releaseVersion, err)
+	}
 
 	params := api.NewClusterParams()
 	params.Namespace = name
@@ -258,7 +283,7 @@ func (o *CreateClusterOpts) Run() error {
 	params.SSHKey = config.SSHKey
 	cpOperatorImage := os.Getenv("CONTROL_PLANE_OPERATOR_IMAGE_OVERRIDE")
 	if cpOperatorImage == "" {
-		params.ControlPlaneOperatorImage = defaultControlPlaneOperatorImage
+		params.ControlPlaneOperatorImage = defaultControlPlaneOperatorImage(version)
 	} else {
 		params.ControlPlaneOperatorImage = cpOperatorImage
 	}
@@ -270,20 +295,6 @@ func (o *CreateClusterOpts) Run() error {
 	}
 	params.HypershiftOperatorControllers = []string{"route-sync", "auto-approver", "kubeadmin-password", "node"}
 
-	workingDir := filepath.Join(o.Directory, "install-files")
-	if err = os.Mkdir(workingDir, 0755); err != nil {
-		if os.IsExist(err) {
-			if err = os.RemoveAll(workingDir); err != nil {
-				return err
-			}
-			if err = os.Mkdir(workingDir, 0755); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
-	log.Infof("The working directory is %s", workingDir)
 	pkiDir := filepath.Join(workingDir, "pki")
 	if err = os.MkdirAll(pkiDir, 0755); err != nil {
 		return errors.Wrap(err, "cannot create temporary PKI directory")
@@ -301,10 +312,6 @@ func (o *CreateClusterOpts) Run() error {
 	manifestsDir := filepath.Join(workingDir, "manifests")
 	if err = os.MkdirAll(manifestsDir, 0755); err != nil {
 		return fmt.Errorf("cannot create temporary manifests directory: %v", err)
-	}
-	pullSecretFile := filepath.Join(workingDir, "pull-secret")
-	if err = ioutil.WriteFile(pullSecretFile, []byte(config.PullSecret), 0644); err != nil {
-		return fmt.Errorf("failed to create temporary pull secret file: %v", err)
 	}
 
 	log.Info("Generating ignition for workers")
@@ -364,7 +371,7 @@ func (o *CreateClusterOpts) Run() error {
 			return fmt.Errorf("failed to generate worker machineset: %v", err)
 		}
 	}
-	if err = generateUserDataSecret(name, config.BaseDomain, filepath.Join(manifestsDir, "machine-user-data.json")); err != nil {
+	if err = generateUserDataSecret(name, config.BaseDomain, filepath.Join(manifestsDir, "machine-user-data.json"), version); err != nil {
 		return fmt.Errorf("failed to generate user data secret: %v", err)
 	}
 	kubeadminPassword, err := generateKubeadminPassword()
@@ -776,7 +783,7 @@ func generateWorkerMachineset(client dynamic.Interface, infraName, namespace, fi
 	return ioutil.WriteFile(fileName, machineSetBytes, 0644)
 }
 
-func generateUserDataSecret(namespace, hyperHostDomain, fileName string) error {
+func generateUserDataSecret(namespace, hyperHostDomain, fileName string, version semver.Version) error {
 	secret := &corev1.Secret{}
 	secret.Kind = "Secret"
 	secret.APIVersion = "v1"
@@ -784,7 +791,16 @@ func generateUserDataSecret(namespace, hyperHostDomain, fileName string) error {
 	secret.Namespace = "openshift-machine-api"
 
 	disableTemplatingValue := []byte(base64.StdEncoding.EncodeToString([]byte("true")))
-	userDataValue := []byte(fmt.Sprintf(`{"ignition":{"config":{"append":[{"source":"http://ignition-provider-%s.apps.%s/config/master","verification":{}}]},"security":{},"timeouts":{},"version":"2.2.0"},"networkd":{},"passwd":{},"storage":{},"systemd":{}}`, namespace, hyperHostDomain))
+	var userDataValue []byte
+
+	// Clear any version modifiers for this comparison
+	version.Pre = nil
+	version.Build = nil
+	if version.GTE(version46) {
+		userDataValue = []byte(fmt.Sprintf(`{"ignition":{"config":{"merge":[{"source":"http://ignition-provider-%s.apps.%s/config/master","verification":{}}]},"security":{},"timeouts":{},"version":"3.1.0"},"networkd":{},"passwd":{},"storage":{},"systemd":{}}`, namespace, hyperHostDomain))
+	} else {
+		userDataValue = []byte(fmt.Sprintf(`{"ignition":{"config":{"append":[{"source":"http://ignition-provider-%s.apps.%s/config/master","verification":{}}]},"security":{},"timeouts":{},"version":"2.2.0"},"networkd":{},"passwd":{},"storage":{},"systemd":{}}`, namespace, hyperHostDomain))
+	}
 
 	secret.Data = map[string][]byte{
 		"disableTemplating": disableTemplatingValue,
@@ -1096,4 +1112,8 @@ func getROKSBinary() (string, error) {
 		return os.Getenv("IBM_ROKS"), nil
 	}
 	return exec.LookPath("ibm-roks")
+}
+
+func defaultControlPlaneOperatorImage(version semver.Version) string {
+	return fmt.Sprintf("registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-%d.%d:control-plane-operator", version.Major, version.Minor)
 }
