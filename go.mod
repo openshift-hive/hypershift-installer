@@ -43,6 +43,7 @@ require (
 	github.com/Luzifer/go-dhparam v1.0.0
 	github.com/apparentlymart/go-cidr v1.0.1
 	github.com/aws/aws-sdk-go v1.30.0 // indirect
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/coreos/ignition v0.35.0
 	github.com/google/uuid v1.1.1
 	github.com/krishicks/yaml-patch v0.0.10

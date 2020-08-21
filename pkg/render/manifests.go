@@ -11,6 +11,15 @@ import (
 	"github.com/openshift-hive/hypershift-installer/pkg/release"
 )
 
+// ReleaseVersion returns the release version of the given release image
+func ReleaseVersion(image, pullSecretFile string) (string, error) {
+	releaseInfo, err := release.GetReleaseInfo(image, "", pullSecretFile)
+	if err != nil {
+		return "", err
+	}
+	return releaseInfo.Versions["release"], nil
+}
+
 // RenderClusterManifests renders manifests for a hosted control plane cluster
 func RenderClusterManifests(params *api.ClusterParams, pullSecretFile, pkiDir, outputDir string, etcd bool, vpn bool, externalOauth bool, includeRegistry bool) error {
 	releaseInfo, err := release.GetReleaseInfo(params.ReleaseImage, params.OriginReleasePrefix, pullSecretFile)
