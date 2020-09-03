@@ -253,6 +253,9 @@ func (o *CreateClusterOpts) Run() error {
 		return fmt.Errorf("failed to create temporary pull secret file: %v", err)
 	}
 	releaseVersion, err := render.ReleaseVersion(releaseImage, pullSecretFile)
+	if err != nil {
+		return fmt.Errorf("cannot obtain release version: %v", err)
+	}
 	version, err := semver.Parse(releaseVersion)
 	if err != nil {
 		return fmt.Errorf("cannot parse release version (%s): %v", releaseVersion, err)
@@ -294,6 +297,9 @@ func (o *CreateClusterOpts) Run() error {
 		params.HypershiftOperatorImage = hypershiftOperatorImage
 	}
 	params.HypershiftOperatorControllers = []string{"route-sync", "auto-approver", "kubeadmin-password", "node"}
+	if platformType := os.Getenv("PLATFORM_TYPE"); platformType != "" {
+		params.PlatformType = platformType
+	}
 
 	pkiDir := filepath.Join(workingDir, "pki")
 	if err = os.MkdirAll(pkiDir, 0755); err != nil {
