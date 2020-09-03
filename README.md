@@ -32,3 +32,14 @@ The hypershift installer is a program for running OpenShift 4.x in a hyperscale 
 * Setup your KUBECONFIG to point to the management cluster
 * Run `./bin/hypershift-installer destroy cluster NAME` where NAME is the name you gave your
   cluster when creating the `install-config.yaml`.
+
+### Environment Variables used by the Installer
+* `CONTROL_PLANE_OPERATOR_IMAGE_OVERRIDE` - Override for the control plane operator image. Defaults to
+  `registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-{MAJOR}.{MINOR}:control-plane-operator`.
+* `HYPERSHIFT_OPERATOR_IMAGE_OVERRIDE` - Override for the hypershift operator image. Defaults to 
+  `quay.io/hypershift/hypershift-operator:latest`.
+* `DH_PARAMS` - file containing Diffie-Hellman parameters for VPN server. By default this file is generated and placed
+   in `install-files/pki/openvpn-dh.pem`.
+* `KUBECONFIG` - Kubeconfig pointing to host cluster. If not set, the `~/.kube/config` file is used.
+* `PLATFORM_TYPE` - Platform type for child cluster's Infrastructure config. If not specified, it is set to
+  `None`.
