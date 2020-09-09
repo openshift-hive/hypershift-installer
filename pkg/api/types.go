@@ -45,6 +45,7 @@ type ClusterParams struct {
 	RestartDate                         string                 `json:"restartDate"`
 	ControlPlaneOperatorImage           string                 `json:"controlPlaneOperatorImage"`
 	ControlPlaneOperatorControllers     []string               `json:"controlPlaneOperatorControllers"`
+	ROKSMetricsImage                    string                 `json:"roksMetricsImage"`
 	ExtraFeatureGates                   []string               `json:"extraFeatureGates"`
 	ControlPlaneOperatorSecurity        string                 `json:"controlPlaneOperatorSecurity"`
 	ApiserverLivenessPath               string                 `json:"apiserverLivenessPath"`
