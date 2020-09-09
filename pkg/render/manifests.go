@@ -58,6 +58,8 @@ func newClusterManifestContext(images, versions map[string]string, params interf
 		"pki":               pkiFunc(pkiDir),
 		"include_pki":       includePKIFunc(pkiDir),
 		"pullSecretBase64":  pullSecretBase64(pullSecretFile),
+		"atleast_version":   atLeastVersionFunc(versions),
+		"lessthan_version":  lessThanVersionFunc(versions),
 	})
 	return ctx
 }

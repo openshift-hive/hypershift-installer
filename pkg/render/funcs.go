@@ -13,6 +13,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/blang/semver"
 	"github.com/vincent-petithory/dataurl"
 )
 
@@ -31,6 +32,31 @@ func imageFunc(images map[string]string) func(string) string {
 func versionFunc(versions map[string]string) func(string) string {
 	return func(component string) string {
 		return versions[component]
+	}
+}
+
+func lessThanVersionFunc(versions map[string]string) func(string) bool {
+	return versionCompareFunc(versions, func(a, e semver.Version) bool { return a.LT(e) })
+}
+
+func atLeastVersionFunc(versions map[string]string) func(string) bool {
+	return versionCompareFunc(versions, func(a, e semver.Version) bool { return a.GTE(e) })
+}
+
+func versionCompareFunc(versions map[string]string, versionCompareFn func(actual, expected semver.Version) bool) func(string) bool {
+	releaseVersionStr := versions["release"]
+	releaseVersion, err := semver.Parse(releaseVersionStr)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse release version %s: %v", releaseVersionStr, err))
+	}
+	releaseVersion.Pre = nil
+	releaseVersion.Build = nil
+	return func(version string) bool {
+		parsedVersion, err := semver.Parse(version)
+		if err != nil {
+			panic(fmt.Sprintf("failed to parse version %s: %v", version, err))
+		}
+		return versionCompareFn(releaseVersion, parsedVersion)
 	}
 }
 
