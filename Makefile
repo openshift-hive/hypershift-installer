@@ -5,9 +5,9 @@ SRC_DIRS = cmd pkg
 default: verify build
 
 .PHONY: build
-#build:  bindata control-plane-operator
 build: bindata
-	go build -mod=vendor -o bin/hypershift-installer github.com/openshift-hive/hypershift-installer/cmd
+	go build -mod=vendor -o bin/hypershift-installer github.com/openshift-hive/hypershift-installer/cmd/hypershift-installer
+	go build -mod=vendor -o bin/machineset-transform github.com/openshift-hive/hypershift-installer/cmd/machineset-transform
 
 .PHONY: bindata
 bindata:
