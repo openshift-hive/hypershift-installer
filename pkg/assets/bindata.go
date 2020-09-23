@@ -2087,13 +2087,13 @@ spec:
         - |-
           mkdir -p /mcc-manifests/bootstrap/manifests
           mkdir -p /mcc-manifests/manifests
-          exec machine-config-operator bootstrap \
+          exec machine-config-operator bootstrap \{{ if lessthan_version "4.6.0" }}
           --etcd-ca=/assets/manifests/root-ca.crt \
           --etcd-metric-ca=/assets/manifests/root-ca.crt \
+          --etcd-image={{ imageFor "etcd" }} \
+          --kube-client-agent-image={{ imageFor "kube-client-agent" }} \{{ end }}
           --root-ca=/assets/manifests/root-ca.crt \
           --kube-ca=/assets/manifests/combined-ca.crt \
-          --etcd-image={{ imageFor "etcd" }} \
-          --kube-client-agent-image={{ imageFor "kube-client-agent" }} \
           --machine-config-operator-image={{ imageFor "machine-config-operator" }} \
           --machine-config-oscontent-image={{ imageFor "machine-os-content" }} \
           --infra-image={{ imageFor "pod" }} \
