@@ -27,8 +27,7 @@ import (
 
 const (
 	apiEndpointTimeout           = 10 * time.Minute
-	nodesReadyTimeout            = 10 * time.Minute
-	bootstrapPodCompleteTimeout  = 5 * time.Minute
+	nodesReadyTimeout            = 15 * time.Minute
 	clusterOperatorsReadyTimeout = 15 * time.Minute
 	serviceLoadBalancerTimeout   = 5 * time.Minute
 )
@@ -99,24 +98,6 @@ func waitForNodesReady(client kubeclient.Interface, expectedCount int) error {
 		return true, nil
 	}
 	_, err := clientwatch.UntilWithSync(ctx, listWatcher, &corev1.Node{}, nil, allNodesReady)
-	return err
-}
-
-func waitForBootstrapPod(client kubeclient.Interface, namespace string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), bootstrapPodCompleteTimeout)
-	defer cancel()
-	listWatcher := cache.NewListWatchFromClient(client.CoreV1().RESTClient(), "pods", "", fields.OneTermEqualSelector("metadata.name", "manifests-bootstrapper"))
-	podIsComplete := func(event watch.Event) (bool, error) {
-		pod, ok := event.Object.(*corev1.Pod)
-		if !ok {
-			return false, fmt.Errorf("unexpected object type")
-		}
-		if pod.Name != "manifests-bootstrapper" {
-			return false, fmt.Errorf("unexpected pod name: %s", pod.Name)
-		}
-		return pod.Status.Phase == corev1.PodSucceeded, nil
-	}
-	_, err := clientwatch.UntilWithSync(ctx, listWatcher, &corev1.Pod{}, nil, podIsComplete)
 	return err
 }
 

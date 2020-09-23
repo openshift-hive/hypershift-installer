@@ -421,12 +421,6 @@ func (o *CreateClusterOpts) Run() error {
 		}
 		log.Infof("API is available at %s", fmt.Sprintf("https://%s:6443", apiAddress))
 
-		log.Infof("Waiting up to 5 minutes for bootstrap pod to complete.")
-		if err = waitForBootstrapPod(client, name); err != nil {
-			return fmt.Errorf("failed to wait for bootstrap pod to complete: %v", err)
-		}
-		log.Infof("Bootstrap pod has completed.")
-
 		targetClusterCfg, err := getTargetClusterConfig(pkiDir)
 		if err != nil {
 			return fmt.Errorf("cannot create target cluster client config: %v", err)
@@ -439,7 +433,7 @@ func (o *CreateClusterOpts) Run() error {
 		if workerCount == 0 {
 			log.Info("No workers have been provisioned for this cluster yet.")
 		} else {
-			log.Infof("Waiting up to 10 minutes for nodes to be ready.")
+			log.Infof("Waiting up to 15 minutes for nodes to be ready.")
 			if err = waitForNodesReady(targetClient, workerCount); err != nil {
 				return fmt.Errorf("failed to wait for nodes ready: %v", err)
 			}
