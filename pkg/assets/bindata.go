@@ -34,6 +34,13 @@
 // assets/ignition-deployment.yaml
 // assets/ignition-route.yaml
 // assets/ignition-service.yaml
+// assets/konnectivity-server/konnectivity-agent-daemonset.yaml
+// assets/konnectivity-server/konnectivity-agent-rbac.yaml
+// assets/konnectivity-server/konnectivity-agent-sa.yaml
+// assets/konnectivity-server/konnectivity-server-configmap.yaml
+// assets/konnectivity-server/konnectivity-server-deployment.yaml
+// assets/konnectivity-server/konnectivity-server-local-service.yaml
+// assets/konnectivity-server/konnectivity-server-secret.yaml
 // assets/kube-apiserver/client.conf
 // assets/kube-apiserver/kube-apiserver-configmap.yaml
 // assets/kube-apiserver/kube-apiserver-deployment-patch.yaml
@@ -1615,6 +1622,304 @@ func ignitionServiceYaml() (*asset, error) {
 	return a, nil
 }
 
+var _konnectivityServerKonnectivityAgentDaemonsetYaml = []byte(`apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+    k8s-app: konnectivity-agent
+  namespace: kube-system
+  name: konnectivity-agent
+spec:
+  selector:
+    matchLabels:
+      k8s-app: konnectivity-agent
+  template:
+    metadata:
+      labels:
+        k8s-app: konnectivity-agent
+    spec:
+      priorityClassName: system-cluster-critical
+      tolerations:
+      - key: "CriticalAddonsOnly"
+        operator: "Exists"
+      containers:
+      - image: us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-agent:v0.0.8
+        name: konnectivity-agent
+        command: ["/proxy-agent"]
+        args: [
+                "--logtostderr=true",
+                "--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+                "--proxy-server-host={{ .KonnectivityServerAddress }}",
+                "--proxy-server-port=8092",
+                "--service-account-token-path=/var/run/secrets/tokens/konnectivity-agent-token"
+                ]
+        volumeMounts:
+        - mountPath: /var/run/secrets/tokens
+          name: konnectivity-agent-token
+        livenessProbe:
+          httpGet:
+            port: 8093
+            path: /healthz
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
+      serviceAccountName: konnectivity-agent
+      volumes:
+      - name: konnectivity-agent-token
+        projected:
+          sources:
+          - serviceAccountToken:
+              path: konnectivity-agent-token
+              audience: system:konnectivity-server
+`)
+
+func konnectivityServerKonnectivityAgentDaemonsetYamlBytes() ([]byte, error) {
+	return _konnectivityServerKonnectivityAgentDaemonsetYaml, nil
+}
+
+func konnectivityServerKonnectivityAgentDaemonsetYaml() (*asset, error) {
+	bytes, err := konnectivityServerKonnectivityAgentDaemonsetYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "konnectivity-server/konnectivity-agent-daemonset.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _konnectivityServerKonnectivityAgentRbacYaml = []byte(`apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:konnectivity-server
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: system:konnectivity-server
+`)
+
+func konnectivityServerKonnectivityAgentRbacYamlBytes() ([]byte, error) {
+	return _konnectivityServerKonnectivityAgentRbacYaml, nil
+}
+
+func konnectivityServerKonnectivityAgentRbacYaml() (*asset, error) {
+	bytes, err := konnectivityServerKonnectivityAgentRbacYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "konnectivity-server/konnectivity-agent-rbac.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _konnectivityServerKonnectivityAgentSaYaml = []byte(`apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: konnectivity-agent
+  namespace: kube-system
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+`)
+
+func konnectivityServerKonnectivityAgentSaYamlBytes() ([]byte, error) {
+	return _konnectivityServerKonnectivityAgentSaYaml, nil
+}
+
+func konnectivityServerKonnectivityAgentSaYaml() (*asset, error) {
+	bytes, err := konnectivityServerKonnectivityAgentSaYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "konnectivity-server/konnectivity-agent-sa.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _konnectivityServerKonnectivityServerConfigmapYaml = []byte(`kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: konnectivity-server
+data:
+  ca.crt: |-
+{{ include_pki "combined-ca.crt" 4 }}
+`)
+
+func konnectivityServerKonnectivityServerConfigmapYamlBytes() ([]byte, error) {
+	return _konnectivityServerKonnectivityServerConfigmapYaml, nil
+}
+
+func konnectivityServerKonnectivityServerConfigmapYaml() (*asset, error) {
+	bytes, err := konnectivityServerKonnectivityServerConfigmapYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "konnectivity-server/konnectivity-server-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _konnectivityServerKonnectivityServerDeploymentYaml = []byte(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: konnectivity-server
+  labels:
+    app: konnectivity-server
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 3
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: konnectivity-server
+  template:
+    metadata:
+      labels:
+        app: konnectivity-server
+    spec:
+      containers:
+      - name: konnectivity-server
+        image: us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-server:v0.0.12
+        command: ["/proxy-server"]
+        args: [
+                "--logtostderr=true",
+                "--log-file-max-size=0",
+                "--cluster-cert=/etc/konnectivity-server/pki/server.crt",
+                "--cluster-key=/etc/konnectivity-server/pki/server.key",
+                "--server-cert=/etc/konnectivity-server/pki/local-server.crt",
+                "--server-key=/etc/konnectivity-server/pki/local-server.key",
+                "--server-ca-cert=/etc/konnectivity-server/config/ca.crt",
+                "--mode=grpc",
+                "--server-port=8090",
+                "--agent-port=8091",
+                "--health-port=8092",
+                "--admin-port=8093",
+                "--agent-namespace=kube-system",
+                "--agent-service-account=konnectivity-agent",
+                "--kubeconfig=/etc/konnectivity-server/kubeconfig/kubeconfig",
+                "--authentication-audience=system:konnectivity-server"
+                ]
+        livenessProbe:
+          httpGet:
+            scheme: HTTP
+            port: 8092
+            path: /healthz
+          initialDelaySeconds: 30
+          timeoutSeconds: 60
+        ports:
+        - name: server
+          containerPort: 8090
+        - name: agent
+          containerPort: 8091
+        - name: health
+          containerPort: 8092
+        - name: admin
+          containerPort: 8093
+        volumeMounts:
+        - name: konnectivity-server
+          mountPath: /etc/konnectivity-server/pki/
+          readOnly: true
+        - name: konnectivity-server-config
+          mountPath: /etc/konnectivity-server/config
+          readOnly: true
+        - name: kubeconfig
+          mountPath: /etc/konnectivity-server/kubeconfig
+          readOnly: true
+      volumes:
+      - name: konnectivity-server
+        secret:
+          secretName: konnectivity-server
+      - name: konnectivity-server-config
+        configMap:
+          name: konnectivity-server
+      - name: kubeconfig
+        secret:
+          secretName: service-network-admin-kubeconfig
+`)
+
+func konnectivityServerKonnectivityServerDeploymentYamlBytes() ([]byte, error) {
+	return _konnectivityServerKonnectivityServerDeploymentYaml, nil
+}
+
+func konnectivityServerKonnectivityServerDeploymentYaml() (*asset, error) {
+	bytes, err := konnectivityServerKonnectivityServerDeploymentYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "konnectivity-server/konnectivity-server-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _konnectivityServerKonnectivityServerLocalServiceYaml = []byte(`apiVersion: v1
+kind: Service
+metadata:
+  name: konnectivity-server-local
+spec:
+  ports:
+  - port: 8090
+    protocol: TCP
+    targetPort: 8090
+  selector:
+    app: konnectivity-server
+  type: ClusterIP
+`)
+
+func konnectivityServerKonnectivityServerLocalServiceYamlBytes() ([]byte, error) {
+	return _konnectivityServerKonnectivityServerLocalServiceYaml, nil
+}
+
+func konnectivityServerKonnectivityServerLocalServiceYaml() (*asset, error) {
+	bytes, err := konnectivityServerKonnectivityServerLocalServiceYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "konnectivity-server/konnectivity-server-local-service.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _konnectivityServerKonnectivityServerSecretYaml = []byte(`apiVersion: v1
+kind: Secret
+metadata:
+  name: konnectivity-server
+data:
+  server.crt: {{ pki "konnectivity-server.crt" }}
+  server.key: {{ pki "konnectivity-server.key" }}
+  local-server.crt: {{ pki "konnectivity-server-local.crt" }}
+  local-server.key: {{ pki "konnectivity-server-local.key" }}
+`)
+
+func konnectivityServerKonnectivityServerSecretYamlBytes() ([]byte, error) {
+	return _konnectivityServerKonnectivityServerSecretYaml, nil
+}
+
+func konnectivityServerKonnectivityServerSecretYaml() (*asset, error) {
+	bytes, err := konnectivityServerKonnectivityServerSecretYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "konnectivity-server/konnectivity-server-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _kubeApiserverClientConf = []byte(`client
 verb 3
 nobind
@@ -1745,6 +2050,7 @@ data:
   etcd-client.key: {{ pki "etcd-client.key" }}
   proxy-client.crt: {{ pki "kube-apiserver-aggregator-proxy-client.crt" }}
   proxy-client.key: {{ pki "kube-apiserver-aggregator-proxy-client.key" }}
+  service-account.key: {{ pki "service-account.key" }}
 `)
 
 func kubeApiserverKubeApiserverSecretYamlBytes() ([]byte, error) {
@@ -3625,6 +3931,13 @@ var _bindata = map[string]func() (*asset, error){
 	"ignition-deployment.yaml":                                                           ignitionDeploymentYaml,
 	"ignition-route.yaml":                                                                ignitionRouteYaml,
 	"ignition-service.yaml":                                                              ignitionServiceYaml,
+	"konnectivity-server/konnectivity-agent-daemonset.yaml":                              konnectivityServerKonnectivityAgentDaemonsetYaml,
+	"konnectivity-server/konnectivity-agent-rbac.yaml":                                   konnectivityServerKonnectivityAgentRbacYaml,
+	"konnectivity-server/konnectivity-agent-sa.yaml":                                     konnectivityServerKonnectivityAgentSaYaml,
+	"konnectivity-server/konnectivity-server-configmap.yaml":                             konnectivityServerKonnectivityServerConfigmapYaml,
+	"konnectivity-server/konnectivity-server-deployment.yaml":                            konnectivityServerKonnectivityServerDeploymentYaml,
+	"konnectivity-server/konnectivity-server-local-service.yaml":                         konnectivityServerKonnectivityServerLocalServiceYaml,
+	"konnectivity-server/konnectivity-server-secret.yaml":                                konnectivityServerKonnectivityServerSecretYaml,
 	"kube-apiserver/client.conf":                                                         kubeApiserverClientConf,
 	"kube-apiserver/kube-apiserver-configmap.yaml":                                       kubeApiserverKubeApiserverConfigmapYaml,
 	"kube-apiserver/kube-apiserver-deployment-patch.yaml":                                kubeApiserverKubeApiserverDeploymentPatchYaml,
@@ -3795,6 +4108,15 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"ignition-deployment.yaml": {ignitionDeploymentYaml, map[string]*bintree{}},
 	"ignition-route.yaml":      {ignitionRouteYaml, map[string]*bintree{}},
 	"ignition-service.yaml":    {ignitionServiceYaml, map[string]*bintree{}},
+	"konnectivity-server": {nil, map[string]*bintree{
+		"konnectivity-agent-daemonset.yaml":      {konnectivityServerKonnectivityAgentDaemonsetYaml, map[string]*bintree{}},
+		"konnectivity-agent-rbac.yaml":           {konnectivityServerKonnectivityAgentRbacYaml, map[string]*bintree{}},
+		"konnectivity-agent-sa.yaml":             {konnectivityServerKonnectivityAgentSaYaml, map[string]*bintree{}},
+		"konnectivity-server-configmap.yaml":     {konnectivityServerKonnectivityServerConfigmapYaml, map[string]*bintree{}},
+		"konnectivity-server-deployment.yaml":    {konnectivityServerKonnectivityServerDeploymentYaml, map[string]*bintree{}},
+		"konnectivity-server-local-service.yaml": {konnectivityServerKonnectivityServerLocalServiceYaml, map[string]*bintree{}},
+		"konnectivity-server-secret.yaml":        {konnectivityServerKonnectivityServerSecretYaml, map[string]*bintree{}},
+	}},
 	"kube-apiserver": {nil, map[string]*bintree{
 		"client.conf":                          {kubeApiserverClientConf, map[string]*bintree{}},
 		"kube-apiserver-configmap.yaml":        {kubeApiserverKubeApiserverConfigmapYaml, map[string]*bintree{}},

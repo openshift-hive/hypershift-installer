@@ -54,6 +54,7 @@ type ClusterParams struct {
 	HypershiftOperatorControllers       []string               `json:"hypershiftOperatorControllers"`
 	MachineConfigServerAddress          string                 `json:"machineConfigServerAddress"`
 	SSHKey                              string                 `json:"sshKey"`
+	KonnectivityServerAddress           string                 `json:"konnectivityServerAddress"`
 	DefaultFeatureGates                 []string
 }
 
