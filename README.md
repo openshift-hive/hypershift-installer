@@ -38,6 +38,8 @@ The hypershift installer is a program for running OpenShift 4.x in a hyperscale 
   `registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-{MAJOR}.{MINOR}:control-plane-operator`.
 * `HYPERSHIFT_OPERATOR_IMAGE_OVERRIDE` - Override for the hypershift operator image. Defaults to 
   `quay.io/hypershift/hypershift-operator:latest`.
+* `ROKS_METRICS_IMAGE_OVERRIDE` - Override for the ROKS metrics image. Defaults to
+  `registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-{MAJOR}.{MINOR}:metrics`.
 * `DH_PARAMS` - file containing Diffie-Hellman parameters for VPN server. By default this file is generated and placed
    in `install-files/pki/openvpn-dh.pem`.
 * `KUBECONFIG` - Kubeconfig pointing to host cluster. If not set, the `~/.kube/config` file is used.

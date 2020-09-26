@@ -284,6 +284,11 @@ func (o *CreateClusterOpts) Run() error {
 	params.ImageRegistryHTTPSecret = generateImageRegistrySecret()
 	params.Replicas = "1"
 	params.SSHKey = config.SSHKey
+	roksMetricsImage := os.Getenv("ROKS_METRICS_IMAGE_OVERRIDE")
+	if roksMetricsImage == "" {
+		roksMetricsImage = defaultROKSMetricsImage(version)
+	}
+	params.ROKSMetricsImage = roksMetricsImage
 	cpOperatorImage := os.Getenv("CONTROL_PLANE_OPERATOR_IMAGE_OVERRIDE")
 	if cpOperatorImage == "" {
 		params.ControlPlaneOperatorImage = defaultControlPlaneOperatorImage(version)
@@ -1116,4 +1121,8 @@ func getROKSBinary() (string, error) {
 
 func defaultControlPlaneOperatorImage(version semver.Version) string {
 	return fmt.Sprintf("registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-%d.%d:control-plane-operator", version.Major, version.Minor)
+}
+
+func defaultROKSMetricsImage(version semver.Version) string {
+	return fmt.Sprintf("registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-%d.%d:metrics", version.Major, version.Minor)
 }
