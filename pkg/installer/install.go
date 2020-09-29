@@ -47,8 +47,6 @@ import (
 	installertypes "github.com/openshift/installer/pkg/types"
 
 	"github.com/openshift-hive/hypershift-installer/pkg/api"
-	"github.com/openshift-hive/hypershift-installer/pkg/assets"
-	"github.com/openshift-hive/hypershift-installer/pkg/ignition"
 	"github.com/openshift-hive/hypershift-installer/pkg/pki"
 	"github.com/openshift-hive/hypershift-installer/pkg/render"
 )
@@ -77,10 +75,6 @@ var (
 	}
 	coreScheme = runtime.NewScheme()
 	coreCodecs = serializer.NewCodecFactory(coreScheme)
-
-	ignitionDeploymentBytes = assets.MustAsset("ignition-deployment.yaml")
-	ignitionServiceBytes    = assets.MustAsset("ignition-service.yaml")
-	ignitionRouteBytes      = assets.MustAsset("ignition-route.yaml")
 
 	version46 = semver.MustParse("4.6.0")
 )
@@ -325,11 +319,6 @@ func (o *CreateClusterOpts) Run() error {
 		return fmt.Errorf("cannot create temporary manifests directory: %v", err)
 	}
 
-	log.Info("Generating ignition for workers")
-	if err = ignition.GenerateIgnition(params, []byte(config.SSHKey), pullSecretFile, pkiDir, workingDir); err != nil {
-		return fmt.Errorf("cannot generate ignition file for workers: %v", err)
-	}
-
 	log.Info("Rendering Manifests")
 	render.RenderPKISecrets(pkiDir, manifestsDir, true, true, true)
 	caBytes, err := ioutil.ReadFile(filepath.Join(pkiDir, "combined-ca.crt"))
@@ -455,48 +444,6 @@ func (o *CreateClusterOpts) Run() error {
 	log.Infof("Kubeconfig is available in secret %q in the %s namespace", "admin-kubeconfig", name)
 	log.Infof("Console URL:  %s", fmt.Sprintf("https://console-openshift-console.%s", params.IngressSubdomain))
 	log.Infof("kubeadmin password is available in secret %q in the %s namespace", "kubeadmin-password", name)
-	return nil
-}
-
-// generateIgnitionServices will create a Deployment/Service/Route to serve up the ignition config
-func generateIgnitionServices(manifestsDir string, ignitionFile string) error {
-
-	if err := ioutil.WriteFile(filepath.Join(manifestsDir, "ignition-deployment.yaml"), ignitionDeploymentBytes, 0644); err != nil {
-		log.WithError(err).Error("failed to write out ignition deployment")
-		return err
-	}
-
-	configMap := &corev1.ConfigMap{}
-	configMap.APIVersion = "v1"
-	configMap.Name = "ignition-config"
-
-	ignitionFileBytes, err := ioutil.ReadFile(ignitionFile)
-	if err != nil {
-		log.WithError(err).Error("failed to read in ignition file contents")
-		return err
-	}
-	configMap.Data = map[string]string{
-		"worker.ign": string(ignitionFileBytes),
-	}
-	configMapBytes, err := runtime.Encode(coreCodecs.LegacyCodec(corev1.SchemeGroupVersion), configMap)
-	if err != nil {
-		log.WithError(err).Error("failed to convert configmap to bytes")
-	}
-	if err := ioutil.WriteFile(filepath.Join(manifestsDir, "ignition-config.json"), configMapBytes, 0644); err != nil {
-		log.WithError(err).Error("failed to write out ignition configmap")
-		return err
-	}
-
-	if err := ioutil.WriteFile(filepath.Join(manifestsDir, "ignition-service.yaml"), ignitionServiceBytes, 0644); err != nil {
-		log.WithError(err).Error("failed to write out ignition service")
-		return err
-	}
-
-	if err := ioutil.WriteFile(filepath.Join(manifestsDir, "ignition-route.yaml"), ignitionRouteBytes, 0644); err != nil {
-		log.WithError(err).Error("failed to write out route")
-		return err
-	}
-
 	return nil
 }
 
