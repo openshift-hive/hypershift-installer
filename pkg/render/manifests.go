@@ -78,6 +78,7 @@ func (c *clusterManifestContext) setupManifests(etcd bool, vpn bool, externalOau
 	if includeRegistry {
 		c.registry()
 	}
+	c.konnectivityServer()
 	c.userManifestsBootstrapper()
 	c.routerProxy()
 	c.hypershiftOperator()
@@ -157,6 +158,20 @@ func (c *clusterManifestContext) routerProxy() {
 func (c *clusterManifestContext) hypershiftOperator() {
 	c.addManifestFiles(
 		"hypershift-operator/hypershift-operator-deployment.yaml",
+	)
+}
+
+func (c *clusterManifestContext) konnectivityServer() {
+	c.addManifestFiles(
+		"konnectivity-server/konnectivity-server-secret.yaml",
+		"konnectivity-server/konnectivity-server-configmap.yaml",
+		"konnectivity-server/konnectivity-server-deployment.yaml",
+		"konnectivity-server/konnectivity-server-local-service.yaml",
+	)
+	c.addUserManifestFiles(
+		"konnectivity-server/konnectivity-agent-daemonset.yaml",
+		"konnectivity-server/konnectivity-agent-rbac.yaml",
+		"konnectivity-server/konnectivity-agent-sa.yaml",
 	)
 }
 

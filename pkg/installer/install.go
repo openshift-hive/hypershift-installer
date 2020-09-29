@@ -61,6 +61,7 @@ const (
 	kubeAPIServerServiceName = "kube-apiserver"
 	oauthServiceName         = "oauth-openshift"
 	vpnServiceName           = "openvpn-server"
+	konnectivityServiceName  = "konnectivity-server"
 	ingressOperatorNamespace = "openshift-ingress-operator"
 	hypershiftRouteLabel     = "hypershift.openshift.io/cluster"
 	vpnServiceAccountName    = "vpn"
@@ -112,6 +113,7 @@ func (o *CreateClusterOpts) Run() error {
 	apiAddress := fmt.Sprintf("api.%s", config.BaseDomain)
 	oauthAddress := fmt.Sprintf("oauth.%s.%s", name, config.BaseDomain)
 	vpnAddress := fmt.Sprintf("vpn.%s.%s", name, config.BaseDomain)
+	konnectivityAddress := fmt.Sprintf("konnectivity.%s.%s", name, config.BaseDomain)
 	openshiftClusterIP := "172.30.1.20"
 
 	var dynamicClient dynamic.Interface
@@ -189,6 +191,12 @@ func (o *CreateClusterOpts) Run() error {
 		}
 		log.Info("Created VPN service")
 
+		log.Infof("Creating Konnectivity server service")
+		if err := createKonnectivityServerService(client, name); err != nil {
+			return errors.Wrap(err, "failed to create konnectivity server service")
+		}
+		log.Info("Created Konnectivity service")
+
 		log.Infof("Creating Openshift API service")
 		openshiftClusterIP, err = createOpenshiftService(client, name)
 		if err != nil {
@@ -227,6 +235,13 @@ func (o *CreateClusterOpts) Run() error {
 			return errors.Wrap(err, "failed to get VPN service address")
 		}
 		log.Debugf("VPN address from Service Load Balancer: %s", vpnAddress)
+
+		log.Info("Waiting for Konnectivity load balancer")
+		konnectivityAddress, err = waitForServiceLoadBalancerAddress(client, name, konnectivityServiceName)
+		if err != nil {
+			return errors.Wrap(err, "failed to get Konnectivity service address")
+		}
+		log.Debugf("Konnectivity address from Service Load Balancer: %s", vpnAddress)
 	}
 	workingDir := filepath.Join(o.Directory, "install-files")
 	if err = os.Mkdir(workingDir, 0755); err != nil {
@@ -269,6 +284,7 @@ func (o *CreateClusterOpts) Run() error {
 	params.ReleaseImage = releaseImage
 	params.IngressSubdomain = fmt.Sprintf("apps.%s", config.ClusterDomain())
 	params.OpenShiftAPIClusterIP = openshiftClusterIP
+	params.KonnectivityServerAddress = konnectivityAddress
 	params.BaseDomain = config.ClusterDomain()
 	params.MachineConfigServerAddress = fmt.Sprintf("ignition-provider-%s.apps.%s", name, config.BaseDomain)
 	params.CloudProvider = getProvider(config)
@@ -520,6 +536,22 @@ func createVPNServerService(client kubeclient.Interface, namespace string) error
 			Port:       1194,
 			Protocol:   corev1.ProtocolTCP,
 			TargetPort: intstr.FromInt(1194),
+		},
+	}
+	_, err := client.CoreV1().Services(namespace).Create(context.TODO(), svc, metav1.CreateOptions{})
+	return err
+}
+
+func createKonnectivityServerService(client kubeclient.Interface, namespace string) error {
+	svc := &corev1.Service{}
+	svc.Name = konnectivityServiceName
+	svc.Spec.Selector = map[string]string{"app": "konnectivity-server"}
+	svc.Spec.Type = corev1.ServiceTypeLoadBalancer
+	svc.Spec.Ports = []corev1.ServicePort{
+		{
+			Port:       8091,
+			Protocol:   corev1.ProtocolTCP,
+			TargetPort: intstr.FromInt(8091),
 		},
 	}
 	_, err := client.CoreV1().Services(namespace).Create(context.TODO(), svc, metav1.CreateOptions{})
