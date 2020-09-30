@@ -1,6 +1,7 @@
 package render
 
 import (
+	"fmt"
 	"path"
 	"strings"
 	"text/template"
@@ -82,6 +83,7 @@ func (c *clusterManifestContext) setupManifests(etcd bool, vpn bool, externalOau
 	c.routerProxy()
 	c.hypershiftOperator()
 	c.machineConfigServer()
+	c.ignitionConfigs()
 }
 
 func (c *clusterManifestContext) etcd() {
@@ -191,6 +193,40 @@ func (c *clusterManifestContext) userManifestsBootstrapper() {
 			panic(err.Error())
 		}
 		c.addManifest("user-manifest-"+name, manifest)
+	}
+}
+
+const ignitionConfigTemplate = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}
+  labels:
+    ignition-config: "true"
+data:
+  data: |-
+{{ indent 4 .content }}
+`
+
+func (c *clusterManifestContext) ignitionConfigs() {
+	manifests, err := assets.AssetDir("ignition-configs")
+	if err != nil {
+		panic(err.Error())
+	}
+	for _, m := range manifests {
+		content, err := c.substituteParams(c.params, "ignition-configs/"+m)
+		if err != nil {
+			panic(err)
+		}
+		name := fmt.Sprintf("ignition-config-%s", strings.TrimSuffix(m, ".yaml"))
+		params := map[string]string{
+			"name":    name,
+			"content": content,
+		}
+		cm, err := c.substituteParamsInString(params, ignitionConfigTemplate)
+		if err != nil {
+			panic(err)
+		}
+		c.addManifest(name+".yaml", cm)
 	}
 }
 
