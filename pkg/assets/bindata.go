@@ -18,8 +18,6 @@
 // assets/etcd/etcd-secret-template.yaml
 // assets/hypershift-operator/hypershift-operator-configmap.yaml
 // assets/hypershift-operator/hypershift-operator-deployment.yaml
-// assets/ignition-configs/20-apiserver-haproxy.yaml
-// assets/ignition-configs/99-worker-ssh.yaml
 // assets/ignition-deployment.yaml
 // assets/ignition-route.yaml
 // assets/ignition-service.yaml
@@ -834,98 +832,6 @@ func hypershiftOperatorHypershiftOperatorDeploymentYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "hypershift-operator/hypershift-operator-deployment.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _ignitionConfigs20ApiserverHaproxyYaml = []byte(`apiVersion: machineconfiguration.openshift.io/v1
-kind: MachineConfig
-metadata:
-  name: 20-apiserver-haproxy
-  labels:
-    machineconfiguration.openshift.io/role: master
-spec:
-  config:
-    ignition:
-      version: 2.2.0
-    storage:
-      files:
-      - filesystem: root
-        path: "/usr/local/bin/setup-apiserver-ip.sh"
-        contents:
-          source: "{{ dataURLEncode "apiserver-haproxy/setup-apiserver-ip.sh" }}"
-          verification: {}
-        mode: 0755
-      - filesystem: root
-        path: "/usr/local/bin/teardown-apiserver-ip.sh"
-        contents:
-          source: "{{ dataURLEncode "apiserver-haproxy/teardown-apiserver-ip.sh" }}"
-          verification: {}
-        mode: 0755
-      - filesystem: root
-        path: "/etc/kubernetes/apiserver-proxy-config/haproxy.cfg"
-        contents:
-          source: "{{ dataURLEncode "apiserver-haproxy/haproxy.cfg" }}"
-          verification: {}
-        mode: 0644
-      - filesystem: root
-        path: "/etc/kubernetes/manifests/kube-apiserver-proxy.yaml"
-        contents:
-          source: "{{ dataURLEncode "apiserver-haproxy/kube-apiserver-proxy.yaml" }}"
-          verification: {}
-        mode: 0644
-    systemd:
-      units:
-      - contents: |-
-{{ include "apiserver-haproxy/apiserver-ip.service" 10 }}
-        enabled: true
-        name: "apiserver-ip.service"
-`)
-
-func ignitionConfigs20ApiserverHaproxyYamlBytes() ([]byte, error) {
-	return _ignitionConfigs20ApiserverHaproxyYaml, nil
-}
-
-func ignitionConfigs20ApiserverHaproxyYaml() (*asset, error) {
-	bytes, err := ignitionConfigs20ApiserverHaproxyYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "ignition-configs/20-apiserver-haproxy.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _ignitionConfigs99WorkerSshYaml = []byte(`apiVersion: machineconfiguration.openshift.io/v1
-kind: MachineConfig
-metadata:
-  name: 99-worker-ssh
-  labels:
-    machineconfiguration.openshift.io/role: master
-spec:
-  config:
-    ignition:
-      version: 2.2.0
-    passwd:
-      users:
-      - name: core
-        sshAuthorizedKeys:
-        - |-
-          {{ .SSHKey }}
-`)
-
-func ignitionConfigs99WorkerSshYamlBytes() ([]byte, error) {
-	return _ignitionConfigs99WorkerSshYaml, nil
-}
-
-func ignitionConfigs99WorkerSshYaml() (*asset, error) {
-	bytes, err := ignitionConfigs99WorkerSshYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "ignition-configs/99-worker-ssh.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3036,8 +2942,6 @@ var _bindata = map[string]func() (*asset, error){
 	"etcd/etcd-secret-template.yaml":                                                     etcdEtcdSecretTemplateYaml,
 	"hypershift-operator/hypershift-operator-configmap.yaml":                             hypershiftOperatorHypershiftOperatorConfigmapYaml,
 	"hypershift-operator/hypershift-operator-deployment.yaml":                            hypershiftOperatorHypershiftOperatorDeploymentYaml,
-	"ignition-configs/20-apiserver-haproxy.yaml":                                         ignitionConfigs20ApiserverHaproxyYaml,
-	"ignition-configs/99-worker-ssh.yaml":                                                ignitionConfigs99WorkerSshYaml,
 	"ignition-deployment.yaml":                                                           ignitionDeploymentYaml,
 	"ignition-route.yaml":                                                                ignitionRouteYaml,
 	"ignition-service.yaml":                                                              ignitionServiceYaml,
@@ -3166,10 +3070,6 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"hypershift-operator": {nil, map[string]*bintree{
 		"hypershift-operator-configmap.yaml":  {hypershiftOperatorHypershiftOperatorConfigmapYaml, map[string]*bintree{}},
 		"hypershift-operator-deployment.yaml": {hypershiftOperatorHypershiftOperatorDeploymentYaml, map[string]*bintree{}},
-	}},
-	"ignition-configs": {nil, map[string]*bintree{
-		"20-apiserver-haproxy.yaml": {ignitionConfigs20ApiserverHaproxyYaml, map[string]*bintree{}},
-		"99-worker-ssh.yaml":        {ignitionConfigs99WorkerSshYaml, map[string]*bintree{}},
 	}},
 	"ignition-deployment.yaml": {ignitionDeploymentYaml, map[string]*bintree{}},
 	"ignition-route.yaml":      {ignitionRouteYaml, map[string]*bintree{}},
