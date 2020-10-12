@@ -90,6 +90,7 @@ type CreateClusterOpts struct {
 	ReleaseImage string
 	Wait         bool
 	DryRun       bool
+	AMI          string
 }
 
 func (o *CreateClusterOpts) Run() error {
@@ -367,7 +368,7 @@ func (o *CreateClusterOpts) Run() error {
 			return errors.Wrap(err, "failed to get infrastructure information")
 		}
 		// Create a machineset for the new cluster's worker nodes
-		if err = generateWorkerMachineset(dynamicClient, infraName, name, filepath.Join(manifestsDir, "machineset.json"), workerCount); err != nil {
+		if err = generateWorkerMachineset(dynamicClient, infraName, name, filepath.Join(manifestsDir, "machineset.json"), o.AMI, workerCount); err != nil {
 			return fmt.Errorf("failed to generate worker machineset: %v", err)
 		}
 	}
@@ -697,7 +698,7 @@ func getReleaseImage(client dynamic.Interface) (string, error) {
 	return releaseImage, nil
 }
 
-func generateWorkerMachineset(client dynamic.Interface, infraName, namespace, fileName string, workerCount int) error {
+func generateWorkerMachineset(client dynamic.Interface, infraName, namespace, fileName, ami string, workerCount int) error {
 	machineGV, err := schema.ParseGroupVersion("machine.openshift.io/v1beta1")
 	if err != nil {
 		return err
@@ -728,6 +729,9 @@ func generateWorkerMachineset(client dynamic.Interface, infraName, namespace, fi
 	unstructured.SetNestedField(object, workerName, "spec", "selector", "matchLabels", "machine.openshift.io/cluster-api-machineset")
 	unstructured.SetNestedField(object, workerName, "spec", "template", "metadata", "labels", "machine.openshift.io/cluster-api-machineset")
 	unstructured.SetNestedField(object, fmt.Sprintf("%s-user-data", namespace), "spec", "template", "spec", "providerSpec", "value", "userDataSecret", "name")
+	if ami != "" {
+		unstructured.SetNestedField(object, ami, "spec", "template", "spec", "providerSpec", "value", "ami", "id")
+	}
 	machineSetBytes, err := json.Marshal(object)
 	if err != nil {
 		return err

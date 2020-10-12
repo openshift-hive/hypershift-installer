@@ -100,6 +100,7 @@ func newCreateClusterCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&opts.ReleaseImage, "release-image", opts.ReleaseImage, "[optional] Specify the release image to use for the new cluster. Defaults to same as parent cluster.")
+	cmd.Flags().StringVar(&opts.AMI, "ami", "", "[optional] Specify the AMI ID to use for worker machinesets.")
 	cmd.Flags().StringVar(&opts.Directory, "dir", opts.Directory, "Specify the path of the working directory for the install (location of install-config.yaml)")
 	cmd.Flags().BoolVar(&opts.Wait, "wait", opts.Wait, "Waits for cluster to be available before command ends, fails with an error if cluster does not come up within a given amount of time.")
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", opts.DryRun, "Generates manifests and PKI artifacts for cluster but does not create one. Requires that a release image be specified.")
