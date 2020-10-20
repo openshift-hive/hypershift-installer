@@ -1087,6 +1087,7 @@ data:
   etcd-client.key: {{ pki "etcd-client.key" }}
   proxy-client.crt: {{ pki "kube-apiserver-aggregator-proxy-client.crt" }}
   proxy-client.key: {{ pki "kube-apiserver-aggregator-proxy-client.key" }}
+  service-account.key: {{ pki "service-account.key" }}
 `)
 
 func kubeApiserverKubeApiserverSecretYamlBytes() ([]byte, error) {
