@@ -24,12 +24,14 @@
 // assets/kube-apiserver/client.conf
 // assets/kube-apiserver/kube-apiserver-configmap.yaml
 // assets/kube-apiserver/kube-apiserver-deployment-patch.yaml
+// assets/kube-apiserver/kube-apiserver-localhost-kubeconfig-secret.yaml
 // assets/kube-apiserver/kube-apiserver-secret.yaml
 // assets/kube-apiserver/kube-apiserver-vpnclient-config.yaml
 // assets/kube-apiserver/kube-apiserver-vpnclient-secret.yaml
 // assets/kube-controller-manager/kube-controller-manager-configmap.yaml
 // assets/kube-controller-manager/kube-controller-manager-secret.yaml
 // assets/kube-scheduler/kube-scheduler-secret.yaml
+// assets/machine-config-server/cluster-dns-02-config.yaml
 // assets/machine-config-server/cluster-infrastructure-02-config.yaml
 // assets/machine-config-server/cluster-network-02-config.yaml
 // assets/machine-config-server/cluster-proxy-01-config.yaml
@@ -43,6 +45,8 @@
 // assets/machine-config-server/master.machineconfigpool.yaml
 // assets/machine-config-server/pull-secret.yaml
 // assets/machine-config-server/worker.machineconfigpool.yaml
+// assets/oauth-apiserver/oauth-apiserver-configmap.yaml
+// assets/oauth-apiserver/oauth-apiserver-secret.yaml
 // assets/oauth-openshift/ingress-certs-secret.yaml
 // assets/oauth-openshift/oauth-server-configmap.yaml
 // assets/oauth-openshift/oauth-server-secret.yaml
@@ -1074,6 +1078,29 @@ func kubeApiserverKubeApiserverDeploymentPatchYaml() (*asset, error) {
 	return a, nil
 }
 
+var _kubeApiserverKubeApiserverLocalhostKubeconfigSecretYaml = []byte(`apiVersion: v1
+kind: Secret
+metadata:
+  name: localhost-admin-kubeconfig
+data:
+  kubeconfig: {{ pki "localhost-admin.kubeconfig" }}
+`)
+
+func kubeApiserverKubeApiserverLocalhostKubeconfigSecretYamlBytes() ([]byte, error) {
+	return _kubeApiserverKubeApiserverLocalhostKubeconfigSecretYaml, nil
+}
+
+func kubeApiserverKubeApiserverLocalhostKubeconfigSecretYaml() (*asset, error) {
+	bytes, err := kubeApiserverKubeApiserverLocalhostKubeconfigSecretYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "kube-apiserver/kube-apiserver-localhost-kubeconfig-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _kubeApiserverKubeApiserverSecretYaml = []byte(`apiVersion: v1
 kind: Secret
 metadata:
@@ -1229,6 +1256,29 @@ func kubeSchedulerKubeSchedulerSecretYaml() (*asset, error) {
 	return a, nil
 }
 
+var _machineConfigServerClusterDns02ConfigYaml = []byte(`apiVersion: config.openshift.io/v1
+kind: DNS
+metadata:
+  name: cluster
+spec:
+  baseDomain: {{ .BaseDomain }}
+`)
+
+func machineConfigServerClusterDns02ConfigYamlBytes() ([]byte, error) {
+	return _machineConfigServerClusterDns02ConfigYaml, nil
+}
+
+func machineConfigServerClusterDns02ConfigYaml() (*asset, error) {
+	bytes, err := machineConfigServerClusterDns02ConfigYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "machine-config-server/cluster-dns-02-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _machineConfigServerClusterInfrastructure02ConfigYaml = []byte(`apiVersion: config.openshift.io/v1
 kind: Infrastructure
 metadata:
@@ -1351,6 +1401,8 @@ data:
 {{ include_pki "root-ca.crt" 4 }}
   combined-ca.crt: |-
 {{ include_pki "combined-ca.crt" 4 }}
+  cluster-dns-02-config.yaml: |-
+{{ include "machine-config-server/cluster-dns-02-config.yaml" 4 }}
   cluster-infrastructure-02-config.yaml: |-
 {{ include "machine-config-server/cluster-infrastructure-02-config.yaml" 4 }}
   cluster-network-02-config.yaml: |-
@@ -1449,6 +1501,7 @@ spec:
           --network-config-file=/assets/manifests/cluster-network-02-config.yaml \
           --proxy-config-file=/assets/manifests/cluster-proxy-01-config.yaml \
           --config-file=/assets/manifests/install-config.yaml \
+          --dns-config-file=/assets/manifests/cluster-dns-02-config.yaml \
           --dest-dir=/mcc-manifests \
           --pull-secret=/assets/manifests/pull-secret.yaml
 
@@ -1748,6 +1801,59 @@ func machineConfigServerWorkerMachineconfigpoolYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "machine-config-server/worker.machineconfigpool.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _oauthApiserverOauthApiserverConfigmapYaml = []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openshift-oauth-apiserver
+data:
+  etcd-ca.crt: |-
+{{ include_pki "root-ca.crt" 4 }}
+  serving-ca.crt: |-
+{{ include_pki "root-ca.crt" 4 }}
+`)
+
+func oauthApiserverOauthApiserverConfigmapYamlBytes() ([]byte, error) {
+	return _oauthApiserverOauthApiserverConfigmapYaml, nil
+}
+
+func oauthApiserverOauthApiserverConfigmapYaml() (*asset, error) {
+	bytes, err := oauthApiserverOauthApiserverConfigmapYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "oauth-apiserver/oauth-apiserver-configmap.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _oauthApiserverOauthApiserverSecretYaml = []byte(`apiVersion: v1
+kind: Secret
+metadata:
+  name: openshift-oauth-apiserver
+data:
+  kubeconfig: {{ pki "internal-admin.kubeconfig" }}
+  server.crt: {{ pki "oauth-apiserver-server.crt" }}
+  server.key: {{ pki "oauth-apiserver-server.key" }}
+  etcd-client.crt: {{ pki "etcd-client.crt" }}
+  etcd-client.key: {{ pki "etcd-client.key" }}
+`)
+
+func oauthApiserverOauthApiserverSecretYamlBytes() ([]byte, error) {
+	return _oauthApiserverOauthApiserverSecretYaml, nil
+}
+
+func oauthApiserverOauthApiserverSecretYaml() (*asset, error) {
+	bytes, err := oauthApiserverOauthApiserverSecretYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "oauth-apiserver/oauth-apiserver-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2958,12 +3064,14 @@ var _bindata = map[string]func() (*asset, error){
 	"kube-apiserver/client.conf":                                               kubeApiserverClientConf,
 	"kube-apiserver/kube-apiserver-configmap.yaml":                             kubeApiserverKubeApiserverConfigmapYaml,
 	"kube-apiserver/kube-apiserver-deployment-patch.yaml":                      kubeApiserverKubeApiserverDeploymentPatchYaml,
+	"kube-apiserver/kube-apiserver-localhost-kubeconfig-secret.yaml":           kubeApiserverKubeApiserverLocalhostKubeconfigSecretYaml,
 	"kube-apiserver/kube-apiserver-secret.yaml":                                kubeApiserverKubeApiserverSecretYaml,
 	"kube-apiserver/kube-apiserver-vpnclient-config.yaml":                      kubeApiserverKubeApiserverVpnclientConfigYaml,
 	"kube-apiserver/kube-apiserver-vpnclient-secret.yaml":                      kubeApiserverKubeApiserverVpnclientSecretYaml,
 	"kube-controller-manager/kube-controller-manager-configmap.yaml":           kubeControllerManagerKubeControllerManagerConfigmapYaml,
 	"kube-controller-manager/kube-controller-manager-secret.yaml":              kubeControllerManagerKubeControllerManagerSecretYaml,
 	"kube-scheduler/kube-scheduler-secret.yaml":                                kubeSchedulerKubeSchedulerSecretYaml,
+	"machine-config-server/cluster-dns-02-config.yaml":                         machineConfigServerClusterDns02ConfigYaml,
 	"machine-config-server/cluster-infrastructure-02-config.yaml":              machineConfigServerClusterInfrastructure02ConfigYaml,
 	"machine-config-server/cluster-network-02-config.yaml":                     machineConfigServerClusterNetwork02ConfigYaml,
 	"machine-config-server/cluster-proxy-01-config.yaml":                       machineConfigServerClusterProxy01ConfigYaml,
@@ -2977,6 +3085,8 @@ var _bindata = map[string]func() (*asset, error){
 	"machine-config-server/master.machineconfigpool.yaml":                      machineConfigServerMasterMachineconfigpoolYaml,
 	"machine-config-server/pull-secret.yaml":                                   machineConfigServerPullSecretYaml,
 	"machine-config-server/worker.machineconfigpool.yaml":                      machineConfigServerWorkerMachineconfigpoolYaml,
+	"oauth-apiserver/oauth-apiserver-configmap.yaml":                           oauthApiserverOauthApiserverConfigmapYaml,
+	"oauth-apiserver/oauth-apiserver-secret.yaml":                              oauthApiserverOauthApiserverSecretYaml,
 	"oauth-openshift/ingress-certs-secret.yaml":                                oauthOpenshiftIngressCertsSecretYaml,
 	"oauth-openshift/oauth-server-configmap.yaml":                              oauthOpenshiftOauthServerConfigmapYaml,
 	"oauth-openshift/oauth-server-secret.yaml":                                 oauthOpenshiftOauthServerSecretYaml,
@@ -3087,12 +3197,13 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"ignition-route.yaml":      {ignitionRouteYaml, map[string]*bintree{}},
 	"ignition-service.yaml":    {ignitionServiceYaml, map[string]*bintree{}},
 	"kube-apiserver": {nil, map[string]*bintree{
-		"client.conf":                          {kubeApiserverClientConf, map[string]*bintree{}},
-		"kube-apiserver-configmap.yaml":        {kubeApiserverKubeApiserverConfigmapYaml, map[string]*bintree{}},
-		"kube-apiserver-deployment-patch.yaml": {kubeApiserverKubeApiserverDeploymentPatchYaml, map[string]*bintree{}},
-		"kube-apiserver-secret.yaml":           {kubeApiserverKubeApiserverSecretYaml, map[string]*bintree{}},
-		"kube-apiserver-vpnclient-config.yaml": {kubeApiserverKubeApiserverVpnclientConfigYaml, map[string]*bintree{}},
-		"kube-apiserver-vpnclient-secret.yaml": {kubeApiserverKubeApiserverVpnclientSecretYaml, map[string]*bintree{}},
+		"client.conf":                                     {kubeApiserverClientConf, map[string]*bintree{}},
+		"kube-apiserver-configmap.yaml":                   {kubeApiserverKubeApiserverConfigmapYaml, map[string]*bintree{}},
+		"kube-apiserver-deployment-patch.yaml":            {kubeApiserverKubeApiserverDeploymentPatchYaml, map[string]*bintree{}},
+		"kube-apiserver-localhost-kubeconfig-secret.yaml": {kubeApiserverKubeApiserverLocalhostKubeconfigSecretYaml, map[string]*bintree{}},
+		"kube-apiserver-secret.yaml":                      {kubeApiserverKubeApiserverSecretYaml, map[string]*bintree{}},
+		"kube-apiserver-vpnclient-config.yaml":            {kubeApiserverKubeApiserverVpnclientConfigYaml, map[string]*bintree{}},
+		"kube-apiserver-vpnclient-secret.yaml":            {kubeApiserverKubeApiserverVpnclientSecretYaml, map[string]*bintree{}},
 	}},
 	"kube-controller-manager": {nil, map[string]*bintree{
 		"kube-controller-manager-configmap.yaml": {kubeControllerManagerKubeControllerManagerConfigmapYaml, map[string]*bintree{}},
@@ -3102,6 +3213,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"kube-scheduler-secret.yaml": {kubeSchedulerKubeSchedulerSecretYaml, map[string]*bintree{}},
 	}},
 	"machine-config-server": {nil, map[string]*bintree{
+		"cluster-dns-02-config.yaml":                   {machineConfigServerClusterDns02ConfigYaml, map[string]*bintree{}},
 		"cluster-infrastructure-02-config.yaml":        {machineConfigServerClusterInfrastructure02ConfigYaml, map[string]*bintree{}},
 		"cluster-network-02-config.yaml":               {machineConfigServerClusterNetwork02ConfigYaml, map[string]*bintree{}},
 		"cluster-proxy-01-config.yaml":                 {machineConfigServerClusterProxy01ConfigYaml, map[string]*bintree{}},
@@ -3115,6 +3227,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"master.machineconfigpool.yaml":                {machineConfigServerMasterMachineconfigpoolYaml, map[string]*bintree{}},
 		"pull-secret.yaml":                             {machineConfigServerPullSecretYaml, map[string]*bintree{}},
 		"worker.machineconfigpool.yaml":                {machineConfigServerWorkerMachineconfigpoolYaml, map[string]*bintree{}},
+	}},
+	"oauth-apiserver": {nil, map[string]*bintree{
+		"oauth-apiserver-configmap.yaml": {oauthApiserverOauthApiserverConfigmapYaml, map[string]*bintree{}},
+		"oauth-apiserver-secret.yaml":    {oauthApiserverOauthApiserverSecretYaml, map[string]*bintree{}},
 	}},
 	"oauth-openshift": {nil, map[string]*bintree{
 		"ingress-certs-secret.yaml":   {oauthOpenshiftIngressCertsSecretYaml, map[string]*bintree{}},
