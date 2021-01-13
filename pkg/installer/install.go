@@ -114,6 +114,7 @@ func (o *CreateClusterOpts) Run() error {
 	oauthAddress := fmt.Sprintf("oauth.%s.%s", name, config.BaseDomain)
 	vpnAddress := fmt.Sprintf("vpn.%s.%s", name, config.BaseDomain)
 	openshiftClusterIP := "172.30.1.20"
+	oauthClusterIP := "172.30.1.21"
 
 	var dynamicClient dynamic.Interface
 	var client kubeclient.Interface
@@ -197,6 +198,13 @@ func (o *CreateClusterOpts) Run() error {
 		}
 		log.Infof("Created Openshift API service with cluster IP: %s", openshiftClusterIP)
 
+		log.Infof("Creating Oauth API service")
+		oauthClusterIP, err = createOauthAPIServerService(client, name)
+		if err != nil {
+			return errors.Wrap(err, "failed to create oauth server service")
+		}
+		log.Infof("Created Oauth API service with cluster IP: %s", oauthClusterIP)
+
 		log.Info("Creating OAuth service")
 		if err := createOauthService(client, name); err != nil {
 			return errors.Wrap(err, "error creating service for oauth")
@@ -270,6 +278,7 @@ func (o *CreateClusterOpts) Run() error {
 	params.ReleaseImage = releaseImage
 	params.IngressSubdomain = fmt.Sprintf("apps.%s", config.ClusterDomain())
 	params.OpenShiftAPIClusterIP = openshiftClusterIP
+	params.OauthAPIClusterIP = oauthClusterIP
 	params.BaseDomain = config.ClusterDomain()
 	params.MachineConfigServerAddress = fmt.Sprintf("ignition-provider-%s.apps.%s", name, config.BaseDomain)
 	params.CloudProvider = getProvider(config)
@@ -326,7 +335,9 @@ func (o *CreateClusterOpts) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to render PKI secrets: %v", err)
 	}
-	params.OpenshiftAPIServerCABundle = base64.StdEncoding.EncodeToString(caBytes)
+	encodedCA := base64.StdEncoding.EncodeToString(caBytes)
+	params.OpenshiftAPIServerCABundle = encodedCA
+	params.OauthAPIServerCABundle = encodedCA
 
 	// Save Params
 	clusterYAMLFileName := filepath.Join(workingDir, "cluster.yaml")
@@ -531,6 +542,26 @@ func createOpenshiftService(client kubeclient.Interface, namespace string) (stri
 	svc := &corev1.Service{}
 	svc.Name = "openshift-apiserver"
 	svc.Spec.Selector = map[string]string{"app": "openshift-apiserver"}
+	svc.Spec.Type = corev1.ServiceTypeClusterIP
+	svc.Spec.Ports = []corev1.ServicePort{
+		{
+			Name:       "https",
+			Port:       443,
+			Protocol:   corev1.ProtocolTCP,
+			TargetPort: intstr.FromInt(8443),
+		},
+	}
+	svc, err := client.CoreV1().Services(namespace).Create(context.TODO(), svc, metav1.CreateOptions{})
+	if err != nil {
+		return "", err
+	}
+	return svc.Spec.ClusterIP, nil
+}
+
+func createOauthAPIServerService(client kubeclient.Interface, namespace string) (string, error) {
+	svc := &corev1.Service{}
+	svc.Name = "openshift-oauth-apiserver"
+	svc.Spec.Selector = map[string]string{"app": "openshift-oauth-apiserver"}
 	svc.Spec.Type = corev1.ServiceTypeClusterIP
 	svc.Spec.Ports = []corev1.ServicePort{
 		{

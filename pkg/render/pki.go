@@ -35,6 +35,7 @@ func (c *pkiRenderContext) setupManifests(etcd bool, vpn bool, externalOauth boo
 		c.oauthOpenshiftServer()
 	}
 	c.kubeControllerManager()
+	c.oauthAPIServer()
 	c.openshiftAPIServer()
 	c.openshiftControllerManager()
 	c.controlPlaneOperator()
@@ -75,6 +76,7 @@ func (c *pkiRenderContext) kubeAPIServer(includeVPN bool) {
 	c.addManifestFiles(
 		"kube-apiserver/kube-apiserver-secret.yaml",
 		"kube-apiserver/kube-apiserver-configmap.yaml",
+		"kube-apiserver/kube-apiserver-localhost-kubeconfig-secret.yaml",
 	)
 	if includeVPN {
 		c.addManifestFiles(
@@ -100,6 +102,13 @@ func (c *pkiRenderContext) openshiftAPIServer() {
 	c.addManifestFiles(
 		"openshift-apiserver/openshift-apiserver-secret.yaml",
 		"openshift-apiserver/openshift-apiserver-configmap.yaml",
+	)
+}
+
+func (c *pkiRenderContext) oauthAPIServer() {
+	c.addManifestFiles(
+		"oauth-apiserver/oauth-apiserver-secret.yaml",
+		"oauth-apiserver/oauth-apiserver-configmap.yaml",
 	)
 }
 
