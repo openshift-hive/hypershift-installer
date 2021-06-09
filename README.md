@@ -1,7 +1,8 @@
 # Hypershift Installer
 
 ## Overview
-The hypershift installer is a program for running OpenShift 4.x in a hyperscale manner with many control planes hosted on a central management cluster. 
+The hypershift installer is a program for running OpenShift 4.x in a hyperscale manner with many control planes hosted on a central management cluster.
+It is used in testing ibm-roks-toolkit releases.
 
 ## Getting Started
 
