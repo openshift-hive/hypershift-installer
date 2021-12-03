@@ -109,6 +109,7 @@ func (c *clusterManifestContext) kubeAPIServer() {
 		"kube-apiserver/kube-apiserver-deployment-patch.yaml")
 	c.addManifestFiles(
 		"kube-apiserver/kube-apiserver-vpnclient-config.yaml",
+		"common/localhost-admin-kubeconfig-secret.yaml",
 	)
 }
 

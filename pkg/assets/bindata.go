@@ -6,6 +6,7 @@
 // assets/apiserver-haproxy/setup-apiserver-ip.sh
 // assets/apiserver-haproxy/teardown-apiserver-ip.sh
 // assets/cluster-bootstrap/cluster-ingresscontrollers-02-config.yaml
+// assets/common/localhost-admin-kubeconfig-secret.yaml
 // assets/common/service-network-admin-kubeconfig-secret.yaml
 // assets/control-plane-operator/cp-operator-configmap.yaml
 // assets/etcd/etcd-cluster-crd.yaml
@@ -300,6 +301,29 @@ func clusterBootstrapClusterIngresscontrollers02ConfigYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "cluster-bootstrap/cluster-ingresscontrollers-02-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _commonLocalhostAdminKubeconfigSecretYaml = []byte(`apiVersion: v1
+kind: Secret
+metadata:
+  name: localhost-admin-kubeconfig
+data:
+  kubeconfig: {{ pki "localhost-admin.kubeconfig" }}
+`)
+
+func commonLocalhostAdminKubeconfigSecretYamlBytes() ([]byte, error) {
+	return _commonLocalhostAdminKubeconfigSecretYaml, nil
+}
+
+func commonLocalhostAdminKubeconfigSecretYaml() (*asset, error) {
+	bytes, err := commonLocalhostAdminKubeconfigSecretYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "common/localhost-admin-kubeconfig-secret.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2940,6 +2964,7 @@ var _bindata = map[string]func() (*asset, error){
 	"apiserver-haproxy/setup-apiserver-ip.sh":                                  apiserverHaproxySetupApiserverIpSh,
 	"apiserver-haproxy/teardown-apiserver-ip.sh":                               apiserverHaproxyTeardownApiserverIpSh,
 	"cluster-bootstrap/cluster-ingresscontrollers-02-config.yaml":              clusterBootstrapClusterIngresscontrollers02ConfigYaml,
+	"common/localhost-admin-kubeconfig-secret.yaml":                            commonLocalhostAdminKubeconfigSecretYaml,
 	"common/service-network-admin-kubeconfig-secret.yaml":                      commonServiceNetworkAdminKubeconfigSecretYaml,
 	"control-plane-operator/cp-operator-configmap.yaml":                        controlPlaneOperatorCpOperatorConfigmapYaml,
 	"etcd/etcd-cluster-crd.yaml":                                               etcdEtcdClusterCrdYaml,
@@ -3062,6 +3087,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"cluster-ingresscontrollers-02-config.yaml": {clusterBootstrapClusterIngresscontrollers02ConfigYaml, map[string]*bintree{}},
 	}},
 	"common": {nil, map[string]*bintree{
+		"localhost-admin-kubeconfig-secret.yaml":       {commonLocalhostAdminKubeconfigSecretYaml, map[string]*bintree{}},
 		"service-network-admin-kubeconfig-secret.yaml": {commonServiceNetworkAdminKubeconfigSecretYaml, map[string]*bintree{}},
 	}},
 	"control-plane-operator": {nil, map[string]*bintree{
