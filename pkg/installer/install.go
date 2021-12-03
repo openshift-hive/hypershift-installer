@@ -258,6 +258,7 @@ func (o *CreateClusterOpts) Run() error {
 
 	params := api.NewClusterParams()
 	params.Namespace = name
+	params.ClusterID = name
 	params.ExternalAPIDNSName = apiAddress
 	params.ExternalAPIPort = 6443
 	params.ExternalAPIAddress = DefaultAPIServerIPAddress
@@ -1071,9 +1072,9 @@ func getROKSBinary() (string, error) {
 }
 
 func defaultControlPlaneOperatorImage(version semver.Version) string {
-	return fmt.Sprintf("registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-%d.%d:control-plane-operator", version.Major, version.Minor)
+	return fmt.Sprintf("registry.ci.openshift.org/hypershift-toolkit/ibm-roks-%d.%d:control-plane-operator", version.Major, version.Minor)
 }
 
 func defaultROKSMetricsImage(version semver.Version) string {
-	return fmt.Sprintf("registry.svc.ci.openshift.org/hypershift-toolkit/ibm-roks-%d.%d:metrics", version.Major, version.Minor)
+	return fmt.Sprintf("registry.ci.openshift.org/hypershift-toolkit/ibm-roks-%d.%d:metrics", version.Major, version.Minor)
 }
