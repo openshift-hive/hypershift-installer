@@ -1,5 +1,10 @@
 # Hypershift Installer
 
+## Archived!
+
+**NOTE: This repository is no longer maintained.**
+Follow the hypershift project at https://github.com/openshift/hypershift/
+
 ## Overview
 The hypershift installer is a program for running OpenShift 4.x in a hyperscale manner with many control planes hosted on a central management cluster. 
 
